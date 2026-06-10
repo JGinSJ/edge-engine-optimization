@@ -1,0 +1,19 @@
+# Build artifacts
+*.tgz
+
+# Environment / secrets — never commit real credentials
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+
+# Local backup files created during edits
+*.bak
+
+# Local-only logs from demo runs
+demo-ui/snippets-logs.log

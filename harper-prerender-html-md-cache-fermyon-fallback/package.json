@@ -1,0 +1,12 @@
+{
+  "name": "harper-prerender-html-md-cache-fermyon-fallback",
+  "version": "1.0.0",
+  "description": "Akamai EdgeWorker AI/SEO pipeline — Harper HTML+Markdown prerender cache (JS rendering) with Fermyon fallback",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test edgeworker-orchestrator/harper-client.test.js edgeworker-orchestrator/crawler-policy.test.js"
+  }
+}

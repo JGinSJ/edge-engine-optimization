@@ -1,0 +1,12 @@
+{
+  "name": "harper-cache-pipeline",
+  "version": "1.0.0",
+  "description": "Akamai EdgeWorker orchestrator with Harper as write-through cache and Fermyon Spin as conversion backend",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test edgeworker-orchestrator/harper-cache-client.test.js"
+  }
+}

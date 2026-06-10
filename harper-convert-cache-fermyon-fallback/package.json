@@ -1,0 +1,12 @@
+{
+  "name": "serverless-ai-seo-pipeline",
+  "version": "1.0.0",
+  "description": "Akamai EdgeWorker AI crawler pipeline — test harness",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test edgeworker-orchestrator/harper-client.test.js"
+  }
+}

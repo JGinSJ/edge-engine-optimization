@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+
+# Node
+node_modules/
+
+# Rust / Spin build output
+target/
+.spin/
+
+# Local secrets / env — never commit
+.env
+.env.local
+**/.claude/settings.local.json

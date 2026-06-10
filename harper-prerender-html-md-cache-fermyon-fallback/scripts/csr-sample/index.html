@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>CSR Demo — Quantum Widget Pro</title>
+
+	<!-- JSON-LD is present in the shell and must survive HTML→Markdown derivation. -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "Product",
+		"name": "Quantum Widget Pro",
+		"description": "A client-side-rendered product page.",
+		"offers": { "@type": "Offer", "price": "499.00", "priceCurrency": "USD" }
+	}
+	</script>
+</head>
+<body>
+	<!--
+	  This is a CLIENT-SIDE-RENDERED page. A plain HTTP fetch (what the baseline
+	  Harper markdown-prerender and the Fermyon Wasm fallback do) sees only the
+	  empty #app shell below — no product content. Only a headless browser that
+	  executes the JavaScript produces the real content, which is exactly what the
+	  Harper static-prerender renderer does before it is cached + converted.
+	-->
+	<div id="app"><p>Loading…</p></div>
+
+	<script>
+		// Simulated client-side framework render. This runs only in a real browser
+		// (or a headless renderer) — a plain HTTP fetch never executes it, so the
+		// fetched HTML keeps the empty "Loading…" shell above. Injected synchronously
+		// at parse time so the content is present by the renderer's `load` snapshot.
+		(function renderApp() {
+			document.getElementById('app').innerHTML = [
+				'<header><h1>Quantum Widget Pro</h1></header>',
+				'<main>',
+				'  <p>The <strong>Quantum Widget Pro</strong> is our flagship widget, rendered entirely on the client.</p>',
+				'  <h2>Key features</h2>',
+				'  <ul>',
+				'    <li>Entanglement-grade throughput</li>',
+				'    <li>Zero-latency superposition cache</li>',
+				'    <li>Self-healing tunnels</li>',
+				'  </ul>',
+				'  <h2>Pricing</h2>',
+				'  <p>Just <a href="/checkout">$499</a> — ships worldwide.</p>',
+				'</main>'
+			].join('\n');
+		})();
+	</script>
+</body>
+</html>

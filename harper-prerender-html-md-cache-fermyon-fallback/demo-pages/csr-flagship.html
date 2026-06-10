@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Aether One Pro — Flagship Smartphone</title>
+	<meta name="description" content="Aether One Pro: the most advanced Aether phone. Titanium design, A-series Neural chip, pro camera system." />
+
+	<!-- JSON-LD structured data lives in the static shell and must survive
+	     HTML→Markdown derivation (the prerender preserves it as a fenced block). -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "Product",
+		"name": "Aether One Pro",
+		"brand": { "@type": "Brand", "name": "Aether" },
+		"description": "Flagship smartphone with titanium frame, A19 Neural chip, and a pro triple-camera system.",
+		"sku": "AETHER-ONE-PRO-256",
+		"offers": {
+			"@type": "AggregateOffer",
+			"lowPrice": "1099.00",
+			"highPrice": "1599.00",
+			"priceCurrency": "USD",
+			"offerCount": 4
+		},
+		"aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.7", "reviewCount": 2841 }
+	}
+	</script>
+
+	<style>
+		:root{--navy:#0b1f3a;--blue:#2563eb;--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--bg:#f8fafc}
+		*{box-sizing:border-box;margin:0;padding:0}
+		body{font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+		header{background:var(--navy);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
+		.brand{font-weight:800;letter-spacing:-.5px;font-size:18px}
+		nav a{color:#cbd5e1;text-decoration:none;margin-left:18px;font-size:14px}
+		main{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+		section{margin:40px 0}
+		h1{font-size:40px;letter-spacing:-1px;line-height:1.1}
+		h2{font-size:24px;margin-bottom:16px;color:var(--navy)}
+		h3{font-size:17px;margin-bottom:6px}
+		.tagline{color:var(--muted);font-size:18px;margin:10px 0 18px}
+		.price{font-size:20px;font-weight:700;color:var(--navy)}
+		.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:8px 16px;margin:4px 6px 4px 0;cursor:pointer;background:#fff;font-size:14px}
+		.grid{display:grid;gap:16px}
+		.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}
+		.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+		table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+		td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
+		td:first-child{color:var(--muted);width:40%}
+		.review-rating{color:#f59e0b;font-weight:700}
+		.buy{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:14px 28px;font-size:16px;font-weight:700;cursor:pointer}
+		footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px;padding:28px 20px;text-align:center}
+		@media(max-width:760px){.cols-2,.cols-3{grid-template-columns:1fr}h1{font-size:30px}}
+	</style>
+</head>
+<body>
+	<!--
+	  CLIENT-SIDE-RENDERED demo page. A plain HTTP fetch (what a baseline
+	  prerenderer or the Fermyon Wasm fallback does) sees ONLY the #app shell
+	  below — no product content. A headless browser that executes the JavaScript
+	  builds the full rich page, which is what the Harper prerender renderer
+	  captures, caches, and converts to Markdown.
+	-->
+	<div id="app"><p style="padding:80px;text-align:center;color:#94a3b8">Loading Aether One Pro…</p></div>
+
+	<script>
+		// All page content lives here and is rendered on the client only.
+		var DATA = {
+			name: 'Aether One Pro',
+			tagline: 'Titanium. A19 Neural chip. The most advanced Aether camera system ever.',
+			priceFrom: 1099,
+			colors: ['Graphite Titanium', 'Desert Titanium', 'Glacier Titanium', 'Midnight Titanium'],
+			storage: [
+				{ size: '256GB', price: 1099 },
+				{ size: '512GB', price: 1299 },
+				{ size: '1TB', price: 1499 },
+				{ size: '2TB', price: 1599 }
+			],
+			specs: [
+				['Display', '6.9" Super Retina XDR OLED, 1–120Hz ProMotion, 2000 nits peak'],
+				['Chip', 'A19 Neural, 6-core CPU, 6-core GPU, 16-core Neural Engine'],
+				['Rear camera', '48MP Fusion main · 48MP ultra-wide · 12MP 5× telephoto'],
+				['Front camera', '24MP Center Stage, autofocus'],
+				['Video', '4K120 Dolby Vision, ProRes, Log 2, Cinematic mode'],
+				['Battery', 'Up to 33 hours video playback, fast-charge to 50% in 20 min'],
+				['Build', 'Grade 5 titanium frame, Ceramic Shield 2 front'],
+				['Water resistance', 'IP68 (6m for 30 min)'],
+				['Connectivity', '5G mmWave + Sub-6, Wi-Fi 7, Bluetooth 6, Thread, USB-C 3.2'],
+				['Security', 'Face ID, Secure Enclave'],
+				['OS', 'AetherOS 19'],
+				['Dimensions', '163.0 × 77.6 × 8.25 mm, 227 g']
+			],
+			features: [
+				['A19 Neural chip', 'The fastest chip ever in a smartphone, with a 16-core Neural Engine that powers on-device intelligence, computational photography, and real-time translation — all while sipping power.'],
+				['Pro camera system', 'A 48MP Fusion main sensor, a 48MP ultra-wide, and a 5× telephoto combine for a versatile pro kit. Shoot 4K120 Dolby Vision and capture spatial photos and video.'],
+				['Titanium design', 'Aerospace-grade titanium makes Aether One Pro lighter and stronger, with a refined finish that resists fingerprints and scratches.'],
+				['All-day battery', 'The most battery life ever in an Aether phone — up to 33 hours of video playback — with USB-C fast charging and Qi2 wireless.'],
+				['Super Retina XDR', 'A 6.9" display with ProMotion 1–120Hz, 2000 nits of peak brightness outdoors, and an always-on mode that sips power.'],
+				['Built for intelligence', 'On-device models keep your data private while delivering smart summaries, writing tools, and natural-language search across your apps.']
+			],
+			reviews: [
+				['Jordan M.', 5, 'Best phone I have owned', 'The camera alone justifies the upgrade. Low-light shots are stunning and the telephoto is razor sharp. Battery easily lasts a full day of heavy use.'],
+				['Priya S.', 5, 'Titanium feels premium', 'Noticeably lighter than my last phone but feels far more solid. The display outdoors is incredible — I can actually read it in direct sun.'],
+				['Marcus T.', 4, 'Great, but pricey', 'No complaints about performance — it never stutters. Knocking one star only for the price of the 1TB model. Worth it if photography matters to you.'],
+				['Aisha K.', 5, 'The battery is unreal', 'I travel constantly and this is the first phone that survives a full travel day plus a flight without a charger. Fast charging is a lifesaver.'],
+				['Diego R.', 5, 'Pro video is next level', 'Shooting Log 2 and ProRes on a phone still amazes me. The stabilization is good enough that I left my gimbal at home.'],
+				['Hannah L.', 4, 'Love it, minor gripes', 'Gorgeous screen and superb cameras. I wish it charged a touch faster, but 50% in 20 minutes is fine for most days.'],
+				['Sam P.', 5, 'Seamless daily driver', 'Everything is instant. Face ID is faster, apps open immediately, and the on-device features actually save me time every day.'],
+				['Wei C.', 5, 'Camera system sold me', 'Coming from a two-year-old phone, the jump in photo quality is enormous. The 5× telephoto is my favorite lens for everything.']
+			],
+			faqs: [
+				['Does Aether One Pro support 5G?', 'Yes — it supports both mmWave and Sub-6 GHz 5G, plus Wi-Fi 7 and Bluetooth 6 for fast wireless across networks.'],
+				['What charging does it support?', 'USB-C 3.2 with fast charging (50% in about 20 minutes) and Qi2 wireless charging up to 25W.'],
+				['Is the battery user-replaceable?', 'No. The battery is internal and rated for 80% capacity after 1,000 charge cycles. Service is available through Aether support.'],
+				['What storage options are available?', '256GB, 512GB, 1TB, and 2TB. There is no expandable storage slot.'],
+				['Is it water resistant?', 'Yes — rated IP68, withstanding submersion up to 6 meters for 30 minutes. Liquid damage is not covered under warranty.'],
+				['Does it ship with a charger?', 'A USB-C to USB-C cable is included. A power adapter is sold separately to reduce e-waste.'],
+				['What trade-in options exist?', 'Eligible devices can be traded in for credit toward Aether One Pro, applied instantly at checkout or as a statement credit.'],
+				['Which carriers are supported?', 'Aether One Pro is unlocked and works with all major carriers. eSIM and dual-eSIM are supported; there is no physical SIM tray in most regions.']
+			],
+			related: [
+				['Aether One', 1, 799], ['Aether One Plus', 1, 899], ['Aether One Pro Max', 1, 1199],
+				['Aether Buds Pro', 1, 249], ['Aether Watch Ultra', 1, 799], ['Aether Tab Pro', 1, 1099],
+				['Aether Buds', 1, 129], ['Aether Watch', 1, 399], ['Aether Tab', 1, 599]
+			],
+			overview: [
+				'Aether One Pro is the most ambitious phone we have ever built. Every element — from the grade-5 titanium frame to the A19 Neural chip — was engineered to work together, delivering a device that feels effortless in the hand and unstoppable in performance.',
+				'The camera system is a genuine leap. A 48MP Fusion main sensor captures enormous detail, while the 5× telephoto brings distant subjects close without sacrificing clarity. Computational photography runs entirely on-device, so your photos look natural and your data stays private.',
+				'Battery life sets a new bar for the lineup. Intelligent power management learns your routine and shifts work to the most efficient cores, so you get through the longest days — and the longest flights — with charge to spare. When you do plug in, USB-C fast charging takes you to 50% in about twenty minutes.',
+				'AetherOS 19 brings on-device intelligence to everything you do: summarize long threads, draft replies in your own voice, and search across apps using natural language. Because the models run locally, your information never leaves the device.',
+				'And it is built to last. Ceramic Shield 2 is our toughest front cover yet, the titanium enclosure resists everyday wear, and an IP68 rating means a splash, a spill, or a rainy commute is nothing to worry about.'
+			],
+			// A realistic, link-dense footer — the kind of layout bloat that makes
+			// real product pages huge in HTML but tiny once converted to Markdown.
+			footerCols: [
+				['Shop and Learn', ['Store','Aether One Pro','Aether One','Compare','Accessories','Trade In','Financing','Carrier Deals']],
+				['Services', ['AetherCloud','AetherCare+','AetherPay','AetherMusic','AetherTV','Arcade','One Subscription','Fitness+']],
+				['Account', ['Manage Your ID','Account Settings','Order Status','Saved Devices','Shopping Help','Returns']],
+				['For Business', ['Business Store','Shop for Business','Volume Plans','Device Management','Business Support','Financing']],
+				['About Aether', ['Newsroom','Leadership','Careers','Investors','Ethics','Sustainability','Supplier Responsibility','Contact']],
+				['Legal', ['Privacy Policy','Terms of Use','Sales Policy','Warranty','Cookie Settings','Accessibility','Legal Notices']]
+			]
+		};
+
+		// Tiny inline SVG so feature cards carry real markup (as real pages do).
+		function icon(){ return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg>'; }
+
+		function money(n){ return '$' + n.toLocaleString(); }
+
+		// Render the full product page on the client. Runs synchronously at parse,
+		// so the content is present by the renderer's snapshot — but a plain fetch
+		// (no JS) never sees any of it.
+		(function render(){
+			var d = DATA, h = [];
+			h.push('<header><div class="brand">Aether</div><nav>' +
+				'<a href="/store">Store</a><a href="/mac">Devices</a><a href="/support">Support</a><a href="/cart">Cart</a></nav></header>');
+			h.push('<main>');
+
+			// Hero
+			h.push('<section><h1>' + d.name + '</h1><p class="tagline">' + d.tagline + '</p>' +
+				'<p class="price">From ' + money(d.priceFrom) + ' or ' + money(Math.round(d.priceFrom/24)) + '/mo. for 24 mo.</p>' +
+				'<p style="margin-top:18px"><button class="buy">Buy</button></p></section>');
+
+			// Colors
+			h.push('<section><h2>Finish</h2><div>' +
+				d.colors.map(function(c){ return '<span class="pill">' + c + '</span>'; }).join('') + '</div></section>');
+
+			// Storage + pricing
+			h.push('<section><h2>Capacity</h2><div>' +
+				d.storage.map(function(s){ return '<span class="pill"><strong>' + s.size + '</strong> — ' + money(s.price) + '</span>'; }).join('') + '</div></section>');
+
+			// Overview (long-form)
+			h.push('<section><h2>Overview</h2>' +
+				d.overview.map(function(p){ return '<p style="margin-bottom:14px;max-width:780px">' + p + '</p>'; }).join('') + '</section>');
+
+			// Features (with icon markup)
+			h.push('<section><h2>Why Aether One Pro</h2><div class="grid cols-2">' +
+				d.features.map(function(f){ return '<div class="card"><div style="display:flex;gap:12px;align-items:flex-start">' + icon() + '<div><h3>' + f[0] + '</h3><p>' + f[1] + '</p></div></div></div>'; }).join('') + '</div></section>');
+
+			// Specs
+			h.push('<section><h2>Tech specs</h2><table><tbody>' +
+				d.specs.map(function(s){ return '<tr><td>' + s[0] + '</td><td>' + s[1] + '</td></tr>'; }).join('') + '</tbody></table></section>');
+
+			// Reviews
+			h.push('<section><h2>Customer reviews — 4.7 / 5 (2,841 ratings)</h2><div class="grid cols-2">' +
+				d.reviews.map(function(r){
+					var stars = '★★★★★'.slice(0, r[1]) + '☆☆☆☆☆'.slice(0, 5 - r[1]);
+					return '<div class="card"><div class="review-rating">' + stars + '</div>' +
+						'<h3>' + r[2] + '</h3><p>' + r[3] + '</p><p style="color:#6b7280;font-size:13px;margin-top:8px">— ' + r[0] + '</p></div>';
+				}).join('') + '</div></section>');
+
+			// FAQ
+			h.push('<section><h2>Frequently asked questions</h2><div class="grid">' +
+				d.faqs.map(function(q){ return '<div class="card"><h3>' + q[0] + '</h3><p>' + q[1] + '</p></div>'; }).join('') + '</div></section>');
+
+			// Related
+			h.push('<section><h2>You may also like</h2><div class="grid cols-3">' +
+				d.related.map(function(p){ return '<div class="card"><h3>' + p[0] + '</h3><p class="price">' + money(p[2]) + '</p></div>'; }).join('') + '</div></section>');
+
+			h.push('</main>');
+
+			// Mega-footer with link columns (layout bloat, like real product sites).
+			h.push('<footer><div class="grid cols-3" style="max-width:1080px;margin:0 auto;text-align:left">' +
+				d.footerCols.map(function(col){
+					return '<div><h3 style="font-size:14px;color:#0b1f3a;margin-bottom:8px">' + col[0] + '</h3>' +
+						col[1].map(function(link){ return '<div style="margin:3px 0"><a href="/' +
+							link.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '" style="color:#6b7280;text-decoration:none;font-size:13px">' + link + '</a></div>'; }).join('') +
+						'</div>';
+				}).join('') +
+				'</div><p style="margin-top:24px">Aether Inc. · Fictional product for prerender demos · All specs illustrative</p></footer>');
+
+			document.getElementById('app').innerHTML = h.join('\n');
+		})();
+	</script>
+</body>
+</html>

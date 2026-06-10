@@ -1,0 +1,95 @@
+# Local dev / verification harness for the unified Harper prerender pipeline.
+#
+#   origin    — the CSR sample site (empty shell on raw fetch; content only after JS)
+#   harperdb  — Harper running the unified component (cache + queue + MQTT + delivery API)
+#   renderer  — headless-Chrome Puppeteer worker that prerenders origin pages
+#
+# This mirrors the production topology (Harper Cloud + renderer on Akamai Cloud
+# Compute/Linode) on one machine. It is for development only — see
+# docs/integrations/harper-prerender-architecture.md for the production deploy.
+#
+# Bring up:   docker compose up --build
+# Then:       node scripts/harper-bulk-upload.js --urls http://origin:8080/   (from inside, or use host ports)
+#
+# NOTE: Harper config keys can vary by version. If the MQTT_* env vars below are
+# not honored by your image tag, mount a harperdb-config.yaml instead (the keys
+# are the same, nested under `mqtt:` / `http:` / `operationsApi:`).
+
+services:
+  origin:
+    image: node:22-alpine
+    container_name: prerender-origin
+    working_dir: /app
+    volumes:
+      - ./scripts/csr-sample:/app:ro
+    command: ['node', 'server.js']
+    environment:
+      PORT: '8080'
+    expose:
+      - '8080'
+    ports:
+      - '8080:8080'
+
+  harperdb:
+    image: harperdb/harperdb:latest
+    container_name: prerender-harperdb
+    environment:
+      # Admin credentials — also used by the renderer to authenticate.
+      HDB_ADMIN_USERNAME: HDB_ADMIN
+      HDB_ADMIN_PASSWORD: password
+      ROOTPATH: /home/harperdb/hdb
+      # THREADS=1 keeps on-demand render() callbacks on a single thread. With
+      # multiple threads, the orchestrator must route the render result back to
+      # the thread that's awaiting it (handleContent → getCallbackThread); that
+      # cross-thread hop is unreliable here, so /render_preview (and any
+      # waitForResponse render) would hang even though the render completed.
+      # Single-thread is fine for dev/demo; production multi-thread needs the
+      # upstream cross-thread callback path hardened.
+      THREADS: '1'
+      LOGGING_STDSTREAMS: 'true'
+      # Operations API (9925) + application/HTTP REST (9926)
+      OPERATIONSAPI_NETWORK_PORT: '9925'
+      HTTP_PORT: '9926'
+      # Realtime / MQTT — the renderer connects over MQTT-via-WebSocket on the
+      # HTTP port (9926) and the raw MQTT port (1883).
+      MQTT_NETWORK_PORT: '1883'
+      MQTT_WEBSOCKET: 'true'
+      MQTT_REQUIREAUTHENTICATION: 'false'
+    volumes:
+      # Mount the component into Harper's components directory so it auto-loads.
+      # Dev only — data is ephemeral (no persistence volume) to avoid LMDB lock
+      # permission issues when a named volume is created root-owned under the
+      # harperdb user's hdb root.
+      - ./harper-prerender:/home/harperdb/hdb/components/harper-prerender
+    ports:
+      - '9925:9925'
+      - '9926:9926'
+      - '1883:1883'
+
+  renderer:
+    build: ./renderer
+    container_name: prerender-renderer
+    depends_on:
+      - harperdb
+      - origin
+    # Harper's first-run install takes ~30s; the renderer connects at startup and
+    # will exit if Harper isn't ready yet. Auto-restart until it can connect.
+    restart: unless-stopped
+    shm_size: 1gb
+    init: true
+    environment:
+      HDB_HOST: harperdb
+      HDB_HTTP_PORT: '9926'
+      HDB_MQTT_PORT: '1883'
+      HDB_USER: HDB_ADMIN
+      HDB_PASS: password
+      WORKER_ID: local-1
+      # development → ws/http (not wss/https); see renderer/src/external/*.
+      NODE_ENV: development
+      # Navigate to domcontentloaded (fast, always resolves), then settle on
+      # network-idle (bounded, non-throwing) so client-rendered SPAs hydrate.
+      # This combo handles SSR/hybrid pages AND SPAs without per-site tuning.
+      WAIT_FOR_EVENT: ${WAIT_FOR_EVENT:-domcontentloaded}
+      SETTLE_TIMEOUT_MS: ${SETTLE_TIMEOUT_MS:-12000}
+      NETWORK_IDLE_MS: ${NETWORK_IDLE_MS:-600}
+      CONCURRENCY: '2'

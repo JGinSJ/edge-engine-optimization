@@ -1,0 +1,15 @@
+{
+  "name": "harper-cache-pipeline-demo-ui",
+  "version": "1.0.0",
+  "description": "Local demo UI for the Harper Cache Pipeline",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "tiktoken": "^1.0.21",
+    "turndown": "^7.2.4"
+  }
+}

@@ -1,0 +1,52 @@
+name: CI
+
+# Runs the test suites and the renderer type-check on every PR (and on pushes to
+# main). No secrets required — all jobs are hermetic.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  edgeworker-tests:
+    name: EdgeWorker unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Root suite is zero-install (node:test, no dependencies).
+      - run: npm test
+
+  component-tests:
+    name: Harper component (Markdown derivation) tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: harper-prerender/package-lock.json
+      - run: npm ci
+        working-directory: harper-prerender
+      - run: npm test
+        working-directory: harper-prerender
+
+  renderer-build:
+    name: Renderer type-check (tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: renderer/package-lock.json
+      # Skip lifecycle scripts so Puppeteer doesn't download Chrome (not needed
+      # to type-check); tsc is a devDependency and is installed by npm ci.
+      - run: npm ci --ignore-scripts
+        working-directory: renderer
+      - run: npm run build
+        working-directory: renderer

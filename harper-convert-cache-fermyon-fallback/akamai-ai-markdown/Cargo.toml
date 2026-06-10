@@ -1,0 +1,17 @@
+[package]
+name = "akamai-ai-markdown"
+authors = ["Jorge G <233847607+jgeronim@users.noreply.github.com>"]
+description = "akamai-ai-markdown"
+version = "0.1.0"
+rust-version = "1.78"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1"
+spin-sdk = "5.0.0"
+html2md = "0.2"
+
+[workspace]

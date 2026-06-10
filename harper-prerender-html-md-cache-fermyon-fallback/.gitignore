@@ -1,0 +1,41 @@
+# Build artifacts
+*.tgz
+
+# Environment / secrets — never commit real credentials
+.env
+.env.local
+.env.*.local
+
+# Claude Code local settings — permission allowlists can capture machine-local
+# secrets (tokens/passwords/hosts). Never commit.
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+
+# Renderer build output (compiled from TypeScript at image build time)
+renderer/dist/
+
+# Harper local data / runtime (docker-compose volume is named, but guard stray dirs)
+harper-prerender/hdb/
+*.log
+
+# Local backup files created during edits
+*.bak
+*.bak2
+*.bak3
+
+# Local-only logs from demo runs
+demo-ui/snippets-logs.log
+
+# Local-only fixture variants (full reference copy kept off-repo)
+demo-ui/fixtures.full.json
+
+# Saved enterprise fixture HTML — scraped third-party pages that contain real
+# third-party analytics keys, edge-internal debug data, and copyrighted content.
+# Kept locally for demos but never published. Use demo-pages/csr-flagship.html
+# (synthetic) for a public, controlled example instead.
+demo-ui/fixtures/*.html
