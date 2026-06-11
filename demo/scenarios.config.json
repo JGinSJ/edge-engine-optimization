@@ -4,10 +4,10 @@
     {
       "id": "edge-convert",
       "label": "Edge Convert (no cache)",
-      "blurb": "Fermyon converts HTML→Markdown at the edge; CDN-cached; no Harper.",
+      "blurb": "Akamai Functions converts HTML→Markdown at the edge; CDN-cached; no Harper.",
       "source": "fermyon-convert-cdn-cache",
       "host": "stopwaitingshipit.com",
-      "wasmUrl": "https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
       "features": { "harperCache": false, "renderLab": false, "perCrawler": false }
@@ -15,7 +15,7 @@
     {
       "id": "write-through-cache",
       "label": "Write-through Markdown Cache",
-      "blurb": "First AI bot converts via Fermyon and writes through to Harper; returning bots are served from Harper cache.",
+      "blurb": "First AI bot converts via Akamai Functions and writes through to Harper; returning bots are served from Harper cache.",
       "source": "fermyon-convert-harper-md-cache",
       "host": "momentumoverperfection.com",
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
@@ -29,7 +29,7 @@
       "blurb": "Harper prerenders unified HTML+Markdown from one render; serves HTML to search engines and Markdown to AI; Render Lab tuning + per-crawler negotiation.",
       "source": "harper-prerender-html-md-cache-fermyon-fallback",
       "host": "nobodycaresworkharder.me",
-      "wasmUrl": "https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
       "features": { "harperCache": true, "renderLab": true, "perCrawler": true }

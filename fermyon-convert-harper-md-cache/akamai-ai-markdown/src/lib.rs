@@ -141,11 +141,15 @@ async fn handle_ai_markdown(req: Request) -> anyhow::Result<impl IntoResponse> {
     // and avoids panicking on malformed pages.
     let html_string = String::from_utf8_lossy(origin_resp.body()).to_string();
 
-    // 3. Strip non-semantic tags before conversion — style/script/noscript blocks
-    //    contain CSS and JS that html2md converts to noise, not content.
-    let mut cleaned = strip_tag_blocks(&html_string, "style");
-    cleaned = strip_tag_blocks(&cleaned, "script");
-    cleaned = strip_tag_blocks(&cleaned, "noscript");
+    // 3. Strip non-semantic tags before conversion. Beyond CSS/JS (style/script/
+    //    noscript), site chrome (nav/header/footer/aside) and embeds (svg/iframe/
+    //    form) convert into large blocks of Markdown noise — they bloat the output
+    //    and add zero value for AI crawlers. (On heavy pages this is the difference
+    //    between multi-MB and lean Markdown.) Mirrors the demo's Turndown strip set.
+    let mut cleaned = html_string;
+    for tag in ["style", "script", "noscript", "nav", "header", "footer", "aside", "svg", "iframe", "form"] {
+        cleaned = strip_tag_blocks(&cleaned, tag);
+    }
 
     // 4. Transform heavy HTML into clean Markdown on the fly
     let markdown_payload = parse_html(&cleaned);
