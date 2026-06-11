@@ -9,6 +9,7 @@
       "host": "stopwaitingshipit.com",
       "wasmUrl": "https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app",
       "edgeIp": "",
+      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
       "features": { "harperCache": false, "renderLab": false, "perCrawler": false }
     },
     {
@@ -19,6 +20,7 @@
       "host": "momentumoverperfection.com",
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
+      "stagingHost": "momentumoverperfection.com.edgekey-staging.net",
       "features": { "harperCache": true, "renderLab": false, "perCrawler": false }
     },
     {
@@ -29,7 +31,13 @@
       "host": "nobodycaresworkharder.me",
       "wasmUrl": "https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app",
       "edgeIp": "",
+      "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
       "features": { "harperCache": true, "renderLab": true, "perCrawler": true }
     }
-  ]
+  ],
+  "_notes": {
+    "edgeIp": "Pin a specific edge IP to override everything (rarely needed).",
+    "stagingHost": "Staging edge hostname; resolved fresh at request time when AKAMAI_STAGING=1, so each scenario hits its own edge. Default if blank: <host>.edgekey-staging.net. If a property is Standard-TLS, use .edgesuite-staging.net instead.",
+    "run": "Staging demo: AKAMAI_STAGING=1 npm start"
+  }
 }

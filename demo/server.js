@@ -4,6 +4,7 @@ const https = require('https');
 const zlib  = require('zlib');
 const fs    = require('fs');
 const path  = require('path');
+const dns   = require('dns').promises;
 
 const PORT            = parseInt(process.env.PORT || '8080', 10);
 const TIMEOUT_MS      = 20000;
@@ -40,14 +41,35 @@ function resolveScenario(id) {
     const s = SCENARIOS.find(x => x.id === id)
         || SCENARIOS.find(x => x.id === DEFAULT_SCENARIO)
         || SCENARIOS[0];
-    if (!s) return { id: 'default', host: PRODUCTION_HOST, wasmUrl: WASM_URL, edgeIp: process.env.EDGE_IP || '', features: {} };
+    if (!s) return { id: 'default', host: PRODUCTION_HOST, wasmUrl: WASM_URL, edgeIp: '', stagingHost: '', features: {} };
     return {
         id: s.id, label: s.label,
         host:   s.host   || PRODUCTION_HOST,
         wasmUrl: s.wasmUrl || WASM_URL,
-        edgeIp: s.edgeIp || process.env.EDGE_IP || '',
+        edgeIp: s.edgeIp || '',
+        stagingHost: s.stagingHost || '',
         features: s.features || {}
     };
+}
+
+// Which Akamai edge IP to connect to for a scenario. Priority:
+//   1. explicit cfg.edgeIp (pin in scenarios.config.json)
+//   2. STAGING mode → resolve the scenario's OWN staging edge from its host
+//      (cfg.stagingHost, default <host>.edgekey-staging.net) — so each scenario
+//      targets its own edge: no global-EDGE_IP cert mismatch, no hardcoded
+//      rotating IPs
+//   3. global EDGE_IP env
+//   4. '' → connect to the host directly via DNS (once prod is cut to Akamai)
+// Enable with AKAMAI_STAGING=1.
+const STAGING = /^(1|true|staging|yes)$/i.test(process.env.AKAMAI_STAGING || '');
+async function resolveEdgeIp(cfg) {
+    if (cfg && cfg.edgeIp) return cfg.edgeIp;
+    if (STAGING && cfg && cfg.host) {
+        const sHost = cfg.stagingHost || (cfg.host + '.edgekey-staging.net');
+        try { return (await dns.lookup(sHost)).address; }
+        catch { return process.env.EDGE_IP || ''; }
+    }
+    return process.env.EDGE_IP || '';
 }
 
 function countTokens(text) {
@@ -79,11 +101,10 @@ function loadFixtureTokens(fixtureFile) {
 }
 
 function makeEdgeRequest(targetUrl, extraHeaders = {}, cfg = null) {
-    return new Promise((resolve, reject) => {
+    const host = (cfg && cfg.host) || PRODUCTION_HOST;
+    return resolveEdgeIp(cfg).then(edgeIp => new Promise((resolve, reject) => {
         const start = Date.now();
         const isBot = extraHeaders['X-Verified-Bot'] === 'true';
-        const host   = (cfg && cfg.host)   || PRODUCTION_HOST;
-        const edgeIp = (cfg && cfg.edgeIp) || process.env.EDGE_IP || '';
         const options = {
             hostname: edgeIp || host,
             servername: host,            // SNI + cert match when pinning an edge IP
@@ -129,7 +150,7 @@ function makeEdgeRequest(targetUrl, extraHeaders = {}, cfg = null) {
         );
         req.on('error', reject);
         req.end();
-    });
+    }));
 }
 
 // Direct fetch to a real URL — used for token comparison, bypasses the edge.
