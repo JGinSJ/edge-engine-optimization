@@ -21,7 +21,7 @@ const { get_encoding } = require('tiktoken');
 const enc = get_encoding('cl100k_base');
 enc.encode('warmup'); // pre-load WASM binary so the first demo run isn't slow
 
-// Fermyon Spin Wasm function (HTML→Markdown). Override with WASM_URL.
+// Akamai Functions converter (Fermyon Spin Wasm under the hood, HTML→Markdown). Override with WASM_URL.
 const WASM_URL     = process.env.WASM_URL || 'https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app';
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
@@ -89,11 +89,12 @@ function loadFixtureTokens(fixtureFile) {
         const markdown = td.turndown(html);
         const htmlTokens     = countTokens(html);
         const markdownTokens = countTokens(markdown);
-        if (!htmlTokens || !markdownTokens || htmlTokens / markdownTokens < 3) return null;
+        if (!htmlTokens || !markdownTokens) return null;
         return {
             htmlTokens, markdownTokens, fromFixture: true,
             htmlBytes:     Buffer.byteLength(html, 'utf8'),
             markdownBytes: Buffer.byteLength(markdown, 'utf8'),
+            significant:   (htmlTokens / markdownTokens) >= 3,
         };
     } catch {
         return null;
@@ -208,14 +209,15 @@ async function fetchTokenComparison(targetUrl, cfg = null) {
 
     const htmlTokens     = countTokens(htmlResult.value.body);
     const markdownTokens = countTokens(wasmResult.value.body);
-    // Require at least 3× improvement to be worth showing. Pages dominated by
-    // inline JavaScript (e.g. carrier device pages) produce html2md output nearly
-    // as large as the source HTML — a 1.0× multiplier is misleading in a demo.
-    if (!htmlTokens || !markdownTokens || htmlTokens / markdownTokens < 3) return null;
+    if (!htmlTokens || !markdownTokens) return null;
     return {
         htmlTokens, markdownTokens,
         htmlBytes:     Buffer.byteLength(htmlResult.value.body, 'utf8'),
         markdownBytes: Buffer.byteLength(wasmResult.value.body, 'utf8'),
+        // Byte sizes are ALWAYS returned (real HTML vs Markdown, for the cards). The
+        // token-ratio metric is only featured when "significant" (≥3×) — pages dominated
+        // by inline JS convert to nearly-as-large Markdown, where a ~1× ratio misleads.
+        significant:   (htmlTokens / markdownTokens) >= 3,
     };
 }
 
@@ -907,7 +909,7 @@ function renderResults(d) {
   // Falls back to Markdown payload size when token data is unavailable.
   var tokenData = d.tokenData;
   var pageLabel = selectedFixture ? selectedFixture.label : 'this page';
-  if (tokenData && tokenData.htmlTokens > 0 && tokenData.markdownTokens > 0) {
+  if (tokenData && tokenData.significant) {
     var mult = (tokenData.htmlTokens / tokenData.markdownTokens).toFixed(1);
     document.getElementById('m2-val').innerHTML = mult + '<sup>&times;</sup>';
     document.getElementById('m2-tokens').textContent =
@@ -970,12 +972,18 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
   // raw edge bytes, which bloat on JS-heavy pages when the on-demand Wasm
   // fallback (not the Harper prerender) does the conversion. This keeps the
   // HTML-vs-Markdown contrast (and the reduction %) consistent with the token ratio.
-  var cleanMd = tokenData && tokenData.markdownBytes;
+  var realHtml = tokenData && tokenData.htmlBytes;     // real target HTML (direct fetch)
+  var cleanMd  = tokenData && tokenData.markdownBytes; // clean Markdown
   var isAi = (scenario === 'b' || scenario === 'c');
-  var displayBytes = (isAi && cleanMd) ? tokenData.markdownBytes : t.bodySize;
+  // Human card shows the REAL target HTML size (direct fetch) — not the property's
+  // passthrough placeholder, which is a fixed ~37KB and makes Markdown look bloated
+  // on large pages. AI cards show the clean Markdown size; reduction % is vs real HTML.
+  var displayBytes = isAi ? (cleanMd ? tokenData.markdownBytes : t.bodySize)
+                          : (realHtml || t.bodySize);
+  var baseline = realHtml || htmlSize;
   var sizeStr = fmtBytes(displayBytes);
-  if (isAi && htmlSize && displayBytes && displayBytes < htmlSize) {
-    var redPct = Math.round((1 - displayBytes / htmlSize) * 100);
+  if (isAi && baseline && displayBytes && displayBytes < baseline) {
+    var redPct = Math.round((1 - displayBytes / baseline) * 100);
     sizeStr += '<span style="font-size:10px;font-weight:700;color:#059669;margin-left:6px">↓ ' + redPct + '%</span>';
   }
 
@@ -1041,14 +1049,14 @@ function servedByBadge(t, scenario) {
   var harper = !!(scenarioFeatures && scenarioFeatures.harperCache);
   if (s === 'harper-cache-html')                       return badge('Harper · prerendered HTML', 'b-html');
   if (s === 'harper-cache-md' || s === 'harper-cache') return badge('Harper · cached Markdown', 'b-md');
-  // fermyon-origin = the EW converted via Fermyon on a miss (write-through scenarios
-  // also wrote it to Harper at that point; edge-convert just CDN-caches it).
-  if (s === 'fermyon-origin')                          return badge(harper ? 'Fermyon · converted + written to Harper' : 'Fermyon · converted at edge', 'b-miss');
-  if (s === 'fermyon-fallback')                        return badge('Fermyon Wasm · fallback', 'b-miss');
+  // fermyon-origin = the EW converted via Akamai Functions on a miss (write-through
+  // scenarios also wrote it to Harper at that point; edge-convert just CDN-caches it).
+  if (s === 'fermyon-origin')                          return badge(harper ? 'Akamai Functions · converted + written to Harper' : 'Akamai Functions · converted at edge', 'b-miss');
+  if (s === 'fermyon-fallback')                        return badge('Akamai Functions · fallback', 'b-miss');
   if (s === 'origin-fallback')                         return badge('Origin · fallback', 'b-bypass');
   if (s)                                               return badge(s, 'b-bypass');
   // No X-Served-By header present (scenario A, or an endpoint without the header).
-  if (t.xWasmExecution)                                return badge('Fermyon · converted at edge', 'b-miss');
+  if (t.xWasmExecution)                                return badge('Akamai Functions · converted at edge', 'b-miss');
   if (scenario === 'a')                                return badge('Origin · direct', 'b-bypass');
   return badge('Not reported', 'b-bypass');
 }
@@ -1354,7 +1362,7 @@ const server = http.createServer(async (req, res) => {
                     servedBy = representation === 'markdown' ? 'harper-cache-md' : 'harper-cache-html';
                     content = r.body;
                 } else if (representation === 'markdown') {
-                    // Mirror the EdgeWorker: cache miss on the AI path → Fermyon converts.
+                    // Mirror the EdgeWorker: cache miss on the AI path → Akamai Functions converts.
                     const w = await makeDirectFetch(WASM_URL, { 'X-Target-URL': url });
                     servedBy = 'fermyon-fallback';
                     content = w && w.status === 200 ? w.body : '';
