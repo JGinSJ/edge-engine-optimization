@@ -433,6 +433,9 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 .lab-input{width:100%;padding:9px 11px;border:1.5px solid #d4dbe3;border-radius:7px;
            font-size:13px;color:#002F6C;outline:none;font-family:inherit;background:#fff}
 .lab-input:focus{border-color:#00A4EB}
+.lab-opts > div{display:flex;flex-direction:column}
+.lab-desc{font-size:10px;color:#94a3b8;line-height:1.4;margin:0 0 7px}
+.lab-opts .lab-input{margin-top:auto}
 .lab-actions{display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap}
 .clear-btn{background:#eef2f6;border:1.5px solid #d4dbe3;color:#475569;padding:8px 16px;
            border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
@@ -604,12 +607,20 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
     </div>
     <div class="lab-opts">
       <div><label class="lab-lbl">Device</label>
+        <div class="lab-desc">Viewport the page renders at &mdash; changes responsive layout and which assets load.</div>
         <select id="lab-device" class="lab-input"><option>desktop</option><option>mobile</option><option>tablet</option></select></div>
       <div><label class="lab-lbl">Wait until</label>
+        <div class="lab-desc">When to capture the render &mdash; from first DOM (fast) to full network-idle (most complete).</div>
         <select id="lab-wait" class="lab-input"><option value="">(default)</option><option>domcontentloaded</option><option>load</option><option>networkidle2</option><option>networkidle0</option></select></div>
-      <div><label class="lab-lbl">Settle ms (0=off)</label><input id="lab-settle" class="lab-input" placeholder="(default 12000)" /></div>
-      <div><label class="lab-lbl">Idle ms</label><input id="lab-idle" class="lab-input" placeholder="(default 600)" /></div>
-      <div><label class="lab-lbl">Wait for selector</label><input id="lab-selector" class="lab-input" placeholder="e.g. h1" /></div>
+      <div><label class="lab-lbl">Settle ms (0=off)</label>
+        <div class="lab-desc">Max extra time for late JavaScript/content to finish before capturing anyway.</div>
+        <input id="lab-settle" class="lab-input" placeholder="(default 12000)" /></div>
+      <div><label class="lab-lbl">Idle ms</label>
+        <div class="lab-desc">How long network traffic must stay quiet to count as &ldquo;idle.&rdquo;</div>
+        <input id="lab-idle" class="lab-input" placeholder="(default 600)" /></div>
+      <div><label class="lab-lbl">Wait for selector</label>
+        <div class="lab-desc">Hold the render until this CSS selector appears &mdash; for content injected late by JS.</div>
+        <input id="lab-selector" class="lab-input" placeholder="e.g. h1" /></div>
     </div>
     <div class="lab-actions">
       <button class="clear-btn" id="lab-clear-url" onclick="clearCache(false)">Clear this URL</button>
