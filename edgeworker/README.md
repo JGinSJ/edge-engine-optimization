@@ -11,19 +11,28 @@ against Harper; the Function does the write-through.
 | cdn-cache | `false` | — | `false` | `false` | Fermyon convert → MD, Akamai CDN caches |
 | md-cache | `true` | `markdown_cache` | `true` | `false` | Fermyon writes Harper on miss (gq4 node) |
 | convert-cache | `true` | `page_content` | `false` | `false` | Harper self-populates; Fermyon = fallback |
-| prerender | `true` | `page_content` | `false` | `true` | HTML+MD per-crawler — **next increment** |
+| prerender | `true` | `page_content` | `false` | `true` | HTML+MD per-crawler (`PMUSER_CRAWLER_POLICY`) |
 
 Other vars: `PMUSER_HARPER_URL` (read base, e.g. `/_harper`), `PMUSER_HARPER_WRITE_URL`
 (absolute gq4 node — must match the read node; the Fabric cluster doesn't replicate),
 `PMUSER_HARPER_TOKEN`, `PMUSER_WASM_URL` (Akamai-fronted `.fwf.app`),
 `PMUSER_CRAWLER_POLICY` / `PMUSER_SERVE_HTML` (prerender, next increment).
 
+## Representation routing
+
+`crawler-policy.js` resolves HTML vs Markdown per crawler. A **verified bot**
+(`X-Verified-Bot: true`, Akamai Bot Manager) is treated as wanting Markdown unless
+`PMUSER_CRAWLER_POLICY` maps its `botKind` otherwise (e.g. `googlebot=html`). Markdown →
+`serveMarkdown` (read-by-mode → Fermyon, gated write-through). HTML → `serveHtml` (Harper
+`/page` → origin fallback) when `SERVE_HTML=true`, else humans pass through to origin.
+
 ## Status
 
-- ✅ **MD scenarios** (cdn-cache, md-cache, convert-cache) wired; **md-cache** validated
-  against its proven backend.
-- ⏳ **Next increment:** the prerender path — HTML read (`/page?url=`), `SERVE_HTML`
-  human→prerendered-HTML, and per-crawler routing (`crawler-policy.js` + `CRAWLER_POLICY`).
+- ✅ **All four scenarios wired** by config (v2.1.0). md-cache **staging-validated**;
+  cdn-cache + convert-cache (MD) and prerender (HTML+per-crawler) wired + unit-tested.
+- ⏳ **Staging validation pending** for the prerender path (needs the `nobodycares`
+  prerender backend: Harper `/page` + `/page_content`, `PMUSER_SERVE_HTML=true`,
+  `PMUSER_CRAWLER_POLICY`, `PMUSER_HARPER_BOT_KEY`).
 
 ## Build / test
 
