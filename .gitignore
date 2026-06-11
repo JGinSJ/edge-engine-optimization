@@ -8,6 +8,10 @@ node_modules/
 target/
 .spin/
 
+# EdgeWorker bundle artifact
+bundle.tgz
+**/bundle.tgz
+
 # Local secrets / env — never commit
 .env
 .env.local

@@ -1,0 +1,4 @@
+{
+  "edgeworker-version": "2.0.0",
+  "description": "edge-engine-optimization — unified read-only EdgeWorker (Phase B): one bundle, four scenarios by PMUSER_* config"
+}
