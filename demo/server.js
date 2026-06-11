@@ -1024,8 +1024,11 @@ function ctBadge(ct, scenario) {
 
 function cacheBadge(xc, scenario) {
   var v = (xc || '').toUpperCase();
-  if (v.includes('HIT'))  return badge('Cache Hit', 'b-hit');
-  if (v.includes('MISS')) return badge('Cache Miss → Stored', 'b-miss');
+  // Wording follows the active scenario: Harper-backed scenarios cache in Harper;
+  // the edge-convert scenario has no Harper — its only cache is the Akamai CDN.
+  var harper = !!(scenarioFeatures && scenarioFeatures.harperCache);
+  if (v.includes('HIT'))  return badge(harper ? 'Harper Cache Hit' : 'CDN Cache Hit', 'b-hit');
+  if (v.includes('MISS')) return badge(harper ? 'Cache Miss → Harper' : 'CDN Cache Miss', 'b-miss');
   return badge('Bypassed', 'b-bypass');
 }
 
@@ -1035,13 +1038,17 @@ function cacheBadge(xc, scenario) {
 // production endpoint still emits (harper-cache + x-wasm-execution).
 function servedByBadge(t, scenario) {
   var s = (t.xServedBy || '').toLowerCase();
+  var harper = !!(scenarioFeatures && scenarioFeatures.harperCache);
   if (s === 'harper-cache-html')                       return badge('Harper · prerendered HTML', 'b-html');
   if (s === 'harper-cache-md' || s === 'harper-cache') return badge('Harper · cached Markdown', 'b-md');
+  // fermyon-origin = the EW converted via Fermyon on a miss (write-through scenarios
+  // also wrote it to Harper at that point; edge-convert just CDN-caches it).
+  if (s === 'fermyon-origin')                          return badge(harper ? 'Fermyon · converted + written to Harper' : 'Fermyon · converted at edge', 'b-miss');
   if (s === 'fermyon-fallback')                        return badge('Fermyon Wasm · fallback', 'b-miss');
   if (s === 'origin-fallback')                         return badge('Origin · fallback', 'b-bypass');
   if (s)                                               return badge(s, 'b-bypass');
   // No X-Served-By header present (scenario A, or an endpoint without the header).
-  if (t.xWasmExecution)                                return badge('Fermyon Wasm', 'b-miss');
+  if (t.xWasmExecution)                                return badge('Fermyon · converted at edge', 'b-miss');
   if (scenario === 'a')                                return badge('Origin · direct', 'b-bypass');
   return badge('Not reported', 'b-bypass');
 }
