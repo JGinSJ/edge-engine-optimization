@@ -1,4 +1,4 @@
 {
-  "edgeworker-version": "1.2.4",
+  "edgeworker-version": "1.2.5",
   "description": "Harper Cache Pipeline — EdgeWorker orchestrator with write-through cache"
 }

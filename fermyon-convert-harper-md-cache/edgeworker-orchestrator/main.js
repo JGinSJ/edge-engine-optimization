@@ -32,13 +32,13 @@ export async function responseProvider(request) {
         const HARPER_URL              = request.getVariable('PMUSER_HARPER_URL')              ?? '';
         // Writes are done by Fermyon (off-property), so they need the ABSOLUTE Harper
         // URL — the relative proxy path is unreachable from Fermyon. Forwarded to the
-        // converter as X-Harper-Url. Scheme-validated fallback (the Harper host is
-        // not secret — only PMUSER_HARPER_TOKEN is, and that keeps no code default).
-        // CRITICAL: this MUST be the SAME Harper node the /_harper read proxy points at
-        // (the specific node, NOT the cluster endpoint) — the Fabric cluster does not
-        // replicate, so writing to the cluster endpoint while reading from one node
-        // means write-through silently never reads back. Read origin = this node.
-        const HARPER_WRITE_URL        = resolveHttpUrl(request.getVariable('PMUSER_HARPER_WRITE_URL'),
+        // converter as X-Harper-Url; the FUNCTION (not the EW) does the PUT.
+        // CRITICAL: default MUST be the SAME node /_harper reads from (the gq4-* node,
+        // NOT the ai-seo-pipeline.* cluster endpoint) — the Fabric cluster doesn't
+        // replicate, so writing the cluster while reading one node never reads back.
+        // Captured raw so we can see whether the property var actually reaches the EW.
+        const HARPER_WRITE_URL_RAW    = request.getVariable('PMUSER_HARPER_WRITE_URL');
+        const HARPER_WRITE_URL        = resolveHttpUrl(HARPER_WRITE_URL_RAW,
             'https://gq4-us-east5-a-1.ai-seo-pipeline.jgeronim-org.harperfabric.com');
         const HARPER_TOKEN            = request.getVariable('PMUSER_HARPER_TOKEN')            ?? '';
         const HARPER_TIMEOUT_MS       = parseInt(request.getVariable('PMUSER_HARPER_TIMEOUT_MS')       ?? '1500', 10);
@@ -141,7 +141,7 @@ export async function responseProvider(request) {
                 'X-Harper-Read-Reason': [harperReadReason],
                 // Diagnostics: confirm which bundle is live and what it resolved
                 // WASM_URL to (reveals a set-but-invalid PMUSER_WASM_URL).
-                'X-EW-Version':         ['1.2.4'],
+                'X-EW-Version':         ['1.2.5'],
                 'X-Wasm-Url-Used':      [WASM_URL.replace(/[\r\n\t]/g, ' ').substring(0, 160)],
             }, `Wasm Error: ${err}`);
         }
@@ -156,7 +156,11 @@ export async function responseProvider(request) {
             'X-Served-By':           ['fermyon-origin'],
             'X-Cache-Write':         [cacheWriteStatus],
             'X-Harper-Read-Reason':  [harperReadReason],
-            'X-EW-Version':          ['1.2.4'],
+            // Diagnostics: what the Function was told to write to, and whether the
+            // property var actually reached the EW (vs falling back to the default).
+            'X-Harper-Write-Url':    [String(HARPER_WRITE_URL).replace(/[\r\n\t]/g, ' ').substring(0, 120)],
+            'X-Harper-Write-Var':    [(String(HARPER_WRITE_URL_RAW ?? '').replace(/[\r\n\t]/g, ' ').substring(0, 120)) || '(empty)'],
+            'X-EW-Version':          ['1.2.5'],
         }, stringToStream(markdown));
 
     } catch (error) {
