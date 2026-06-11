@@ -3,7 +3,7 @@
   "scenarios": [
     {
       "id": "edge-convert",
-      "label": "Edge Convert (no cache)",
+      "label": "Edge Convert + CDN Cache",
       "blurb": "Akamai Functions converts HTML→Markdown at the edge; CDN-cached; no Harper.",
       "source": "fermyon-convert-cdn-cache",
       "host": "stopwaitingshipit.com",

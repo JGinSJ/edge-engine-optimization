@@ -101,8 +101,21 @@ function loadFixtureTokens(fixtureFile) {
     }
 }
 
+// Modern Akamai edges report cache status via `server-timing: cdn-cache; desc=HIT|MISS`
+// rather than the legacy X-Cache header. Extract HIT/MISS so cacheBadge can read it.
+function cdnCacheStatus(serverTiming) {
+    if (!serverTiming) return '';
+    const m = String(serverTiming).match(/cdn-cache;\s*desc=([A-Za-z_]+)/i);
+    return m ? m[1].toUpperCase() : '';
+}
+
 function makeEdgeRequest(targetUrl, extraHeaders = {}, cfg = null) {
     const host = (cfg && cfg.host) || PRODUCTION_HOST;
+    // Harper scenarios cache in Harper, so we bust the Akamai CDN (unique cb=) to
+    // force the EW to re-run and read Harper on the return visit. The CDN-only
+    // scenario (edge-convert) caches AT the CDN — so we must NOT bust it, or the
+    // return visit never hits the CDN (shows "Bypassed" instead of a cache hit).
+    const harperScenario = !!(cfg && cfg.features && cfg.features.harperCache);
     return resolveEdgeIp(cfg).then(edgeIp => new Promise((resolve, reject) => {
         const start = Date.now();
         const isBot = extraHeaders['X-Verified-Bot'] === 'true';
@@ -111,10 +124,7 @@ function makeEdgeRequest(targetUrl, extraHeaders = {}, cfg = null) {
             servername: host,            // SNI + cert match when pinning an edge IP
             port: 443,
             path: isBot
-                // cb= busts Akamai's edge cache so each bot test re-invokes the EW
-                // (otherwise the 2nd bot request is an edge HIT of the 1st and never
-                // reads Harper). The EW keys on url= only, so the Harper key is stable.
-                ? '/?url=' + encodeURIComponent(targetUrl) + '&cb=' + Date.now()
+                ? '/?url=' + encodeURIComponent(targetUrl) + (harperScenario ? '&cb=' + Date.now() : '')
                 : new URL(targetUrl).pathname + (new URL(targetUrl).search || ''),
             method: 'GET',
             headers: { 'Accept': '*/*', 'Host': host, ...extraHeaders },
@@ -131,7 +141,7 @@ function makeEdgeRequest(targetUrl, extraHeaders = {}, cfg = null) {
                     status:          res.statusCode,
                     responseTime:    Date.now() - start,
                     contentType:     res.headers['content-type']     || '',
-                    xCache:          res.headers['x-cache']          || '',
+                    xCache:          res.headers['x-cache'] || cdnCacheStatus(res.headers['server-timing']) || '',
                     xWasmExecution:  res.headers['x-wasm-execution'] || '',
                     xServedBy:       res.headers['x-served-by']      || '',
                     xCacheWrite:     res.headers['x-cache-write']    || '',
