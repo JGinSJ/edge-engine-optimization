@@ -34,8 +34,12 @@ export async function responseProvider(request) {
         // URL — the relative proxy path is unreachable from Fermyon. Forwarded to the
         // converter as X-Harper-Url. Scheme-validated fallback (the Harper host is
         // not secret — only PMUSER_HARPER_TOKEN is, and that keeps no code default).
+        // CRITICAL: this MUST be the SAME Harper node the /_harper read proxy points at
+        // (the specific node, NOT the cluster endpoint) — the Fabric cluster does not
+        // replicate, so writing to the cluster endpoint while reading from one node
+        // means write-through silently never reads back. Read origin = this node.
         const HARPER_WRITE_URL        = resolveHttpUrl(request.getVariable('PMUSER_HARPER_WRITE_URL'),
-            'https://ai-seo-pipeline.jgeronim-org.harperfabric.com');
+            'https://gq4-us-east5-a-1.ai-seo-pipeline.jgeronim-org.harperfabric.com');
         const HARPER_TOKEN            = request.getVariable('PMUSER_HARPER_TOKEN')            ?? '';
         const HARPER_TIMEOUT_MS       = parseInt(request.getVariable('PMUSER_HARPER_TIMEOUT_MS')       ?? '1500', 10);
         // Scheme-validated so a missing/empty/garbage PMUSER_WASM_URL falls back to
