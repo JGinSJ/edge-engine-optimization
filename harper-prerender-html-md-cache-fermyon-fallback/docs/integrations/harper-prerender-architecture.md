@@ -1,5 +1,11 @@
 # Harper HTML+Markdown Prerender — Architecture & Deployment
 
+> **Note (monorepo):** in `edge-engine-optimization`, the EdgeWorker described below
+> has been consolidated into the unified read-only EdgeWorker at the repo root
+> (`../../../edgeworker/`). References to `edgeworker-orchestrator/` here describe the
+> original standalone layout; the prerender **backend** (renderer + Harper component)
+> is what now lives in this subdirectory.
+
 This project extends the baseline `serverless-ai-seo-pipeline` to solve the
 **client-side-rendering (CSR) gap**: a plain origin fetch of a JS-rendered page
 returns an empty shell, so neither the baseline Harper markdown-prerender nor the
