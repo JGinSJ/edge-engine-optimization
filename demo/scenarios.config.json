@@ -5,7 +5,7 @@
       "id": "edge-convert",
       "label": "Edge Convert + CDN Cache",
       "blurb": "Akamai Functions converts HTML→Markdown at the edge; CDN-cached; no Harper.",
-      "source": "fermyon-convert-cdn-cache",
+      "source": "edge-ai-markdown",
       "host": "stopwaitingshipit.com",
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",

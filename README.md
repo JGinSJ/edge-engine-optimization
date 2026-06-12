@@ -4,26 +4,45 @@
 
 > "Engine Optimization" is the superset: SEO → **S**earch engines (Google, Bing) · GEO → **G**enerative engines (ChatGPT, Gemini, Copilot) · AEO → **A**nswer engines (Perplexity, AI Overviews, assistants). Same idea, different engine in front — the platform serves each the right representation (HTML / Markdown) at the edge.
 
+## How it works
+
+A verified crawler hits the edge. One **read-only EdgeWorker** classifies it and serves the right representation:
+
+- **AI crawlers** get clean **Markdown** — either straight from a **Harper** cache, or converted on demand by an **Akamai Function** (Wasm) that the EdgeWorker calls, with the result optionally cached back into Harper or the CDN.
+- **Search crawlers** (and humans, where enabled) get **prerendered HTML** from Harper, falling back to origin.
+
+The EdgeWorker never writes Harper itself (blocked at the edge) — the Akamai Function performs the write-through. Reads go via the on-property `/_harper` proxy.
+
 ## What's here
 
-This monorepo consolidates four AI-SEO proof-of-concepts. They are one idea at four points on a spectrum, distinguished by **who converts** (Fermyon vs Harper) and **what's cached**:
+| Path | What it is |
+|---|---|
+| **`demo/`** | The unified tabbed sales-engineering demo (3 scenarios) — token savings, cache behavior, Render Lab, per-crawler negotiation. |
+| **`edgeworker/`** | The single unified **read-only EdgeWorker** — one bundle, four scenarios by `PMUSER_*` property config. |
+| **`fermyon-convert-harper-md-cache/akamai-ai-markdown/`** | The **Akamai Function** converter (Rust/Wasm) — HTML→Markdown, with optional Harper write-through. Deployed via `spin aka`. |
+| **`harper-prerender-html-md-cache-fermyon-fallback/`** | The **prerender backend** — headless `renderer/` + the `harper-prerender/` Harper component that produces the unified HTML+Markdown render. |
 
-| Directory (taxonomy name) | Imported from | What it does |
-|---|---|---|
-| `fermyon-convert-cdn-cache/` | edge-ai-markdown | Fermyon converts HTML→Markdown at the edge; CDN-cached; no Harper |
-| `fermyon-convert-harper-md-cache/` | harper-cache-pipeline | Fermyon converts; Harper is a passive write-through Markdown cache (EW reads, Fermyon writes back) |
-| `harper-convert-cache-fermyon-fallback/` | serverless-ai-seo-pipeline | Harper actively prerenders Markdown; Fermyon as fallback |
-| `harper-prerender-html-md-cache-fermyon-fallback/` | harper-prerender-…-fermyon-fallback | Harper prerenders unified HTML+MD from one render; per-crawler content negotiation; Fermyon fallback |
+### The four scenarios (one EdgeWorker, config only)
 
-These collapse to **3 SE demo scenarios** (the two middle rows are the same "write-through cache" story). The unified tabbed demo is built on the `harper-prerender` advanced UI (tab framework + Render Lab + per-crawler `crawler-policy.js`).
+| Scenario | `HARPER_ENABLED` | `HARPER_READ_MODE` | `WRITE_THROUGH` | `SERVE_HTML` |
+|---|---|---|---|---|
+| cdn-cache | `false` | — | `false` | `false` |
+| md-cache | `true` | `markdown_cache` | `true` | `false` |
+| convert-cache | `true` | `page_content` | `false` | `false` |
+| prerender | `true` | `page_content` | `false` | `true` + `CRAWLER_POLICY` |
 
-## Status
+The demo surfaces three of these as tabs (cdn-cache, md-cache, prerender). See `edgeworker/README.md` for the full config matrix.
 
-- **Imported as-is, history preserved** (`git subtree`). Each subdir still builds/runs on its own for now.
-- **Next (planned):** Phase A — merge the demo layer into one tabbed demo (`demo/`); Phase B — collapse backends onto a single read-only EdgeWorker. See the consolidation spec (private vault).
+## Quick start (demo)
+
+```bash
+cd demo && npm install && npm start        # http://localhost:8080
+# staging (until production DNS is cut to Akamai):
+AKAMAI_STAGING=1 npm start
+```
 
 ## Platform constraints (carry across all scenarios)
 
-- The Akamai EdgeWorker `httpRequest()` reaches **only Akamai-fronted hosts** — converters must be on **Fermyon Wasm Functions on Akamai** (`spin aka deploy` → `*.fwf.app`), **not** Fermyon Cloud (`*.fermyon.app` / AWS).
-- Harper **writes** go via Fermyon (EW write to Harper is blocked at the edge); Harper **reads** go via the on-property `/_harper` proxy.
+- The Akamai EdgeWorker `httpRequest()` reaches **only Akamai-fronted hosts** — the converter must be on **Akamai Functions** (`spin aka deploy` → `*.fwf.app`), **not** Fermyon Cloud (`*.fermyon.app` / AWS).
+- Harper **writes** go via the Akamai Function (an EdgeWorker write to Harper is blocked at the edge); Harper **reads** go via the on-property `/_harper` proxy. Writes and reads must target the **same Harper node** (the Fabric cluster endpoint does not replicate to it).
 - `PMUSER_*` config lives in Akamai property variables, never in this repo.
