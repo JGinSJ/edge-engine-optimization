@@ -1028,7 +1028,7 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
               '<div style="font-size:11px;color:#334155;line-height:1.5;margin-top:6px">' +
               'This site is shielded by bot &amp; application defenses &mdash; the kind <strong>Akamai Bot Manager</strong> and <strong>App &amp; API Protector</strong> deliver &mdash; ' +
               'correctly returning <strong>403</strong> to an anonymous automated fetch from outside its perimeter. That&rsquo;s exactly the protection you want against unwanted bots. ' +
-              'In production this path reads <strong>your own</strong> content as an authorized, on-property edge fetch &mdash; not an external scrape &mdash; so it&rsquo;s never blocked. ' +
+              'In production this path reads <strong>your own</strong> content as an authorized, on-property edge fetch &mdash; not an external fetch &mdash; so it&rsquo;s never blocked. ' +
               '(Use a fetch-friendly page to see the live conversion.)</div>';
   }
 
