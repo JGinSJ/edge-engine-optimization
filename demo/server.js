@@ -1017,6 +1017,16 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
   if (scenario !== 'a' && isMarkdown && t.bodyPreview) {
     preview = '<div class="preview-label">Sample of AI-optimized content delivered</div>' +
               '<div class="preview">' + esc(t.bodyPreview.substring(0, 320)) + '</div>';
+  } else if (scenario !== 'a' && t.bodyPreview &&
+             (t.status >= 400 || /non-2xx|forbidden|blocked|wasm error/i.test(t.bodyPreview))) {
+    // The origin blocked the converter's edge fetch (e.g. 403 Forbidden / WAF). The
+    // response is the error string, not Markdown — surface it so the tiny size makes sense.
+    preview = '<div class="preview-label" style="color:#b91c1c">&#9888; Origin blocked the edge fetch &mdash; no Markdown produced</div>' +
+              '<div class="preview" style="background:#fef2f2;border-color:#fecaca;color:#7f1d1d">' +
+              esc(t.bodyPreview.substring(0, 240)) + '</div>' +
+              '<div style="font-size:11px;color:#9b1c1c;line-height:1.45;margin-top:6px">' +
+              'This site returns a non-2xx (e.g. 403 Forbidden) to automated edge fetches, so the converter can&rsquo;t read it &mdash; ' +
+              'the small response above is that error, not Markdown. Use a fetch-friendly page to see the real conversion.</div>';
   }
 
   // Caveat below Response Time on Scenario B only.
