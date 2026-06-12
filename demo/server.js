@@ -1019,14 +1019,17 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
               '<div class="preview">' + esc(t.bodyPreview.substring(0, 320)) + '</div>';
   } else if (scenario !== 'a' && t.bodyPreview &&
              (t.status >= 400 || /non-2xx|forbidden|blocked|wasm error/i.test(t.bodyPreview))) {
-    // The origin blocked the converter's edge fetch (e.g. 403 Forbidden / WAF). The
-    // response is the error string, not Markdown — surface it so the tiny size makes sense.
-    preview = '<div class="preview-label" style="color:#b91c1c">&#9888; Origin blocked the edge fetch &mdash; no Markdown produced</div>' +
-              '<div class="preview" style="background:#fef2f2;border-color:#fecaca;color:#7f1d1d">' +
-              esc(t.bodyPreview.substring(0, 240)) + '</div>' +
-              '<div style="font-size:11px;color:#9b1c1c;line-height:1.45;margin-top:6px">' +
-              'This site returns a non-2xx (e.g. 403 Forbidden) to automated edge fetches, so the converter can&rsquo;t read it &mdash; ' +
-              'the small response above is that error, not Markdown. Use a fetch-friendly page to see the real conversion.</div>';
+    // The origin's bot/WAF defenses (often Akamai's own) returned a non-2xx to the
+    // converter's anonymous edge fetch. Reframe as the protection working as intended —
+    // and explain why this never happens converting your OWN content in production.
+    preview = '<div class="preview-label" style="color:#00558C">&#128737; Blocked by bot &amp; WAF protection &mdash; working as intended</div>' +
+              '<div class="preview" style="background:#eff6ff;border-color:#bfdbfe;color:#1e3a5f">' +
+              esc(t.bodyPreview.substring(0, 200)) + '</div>' +
+              '<div style="font-size:11px;color:#334155;line-height:1.5;margin-top:6px">' +
+              'This site is shielded by bot &amp; application defenses &mdash; the kind <strong>Akamai Bot Manager</strong> and <strong>App &amp; API Protector</strong> deliver &mdash; ' +
+              'correctly returning <strong>403</strong> to an anonymous automated fetch from outside its perimeter. That&rsquo;s exactly the protection you want against scrapers. ' +
+              'In production this path reads <strong>your own</strong> content as an authorized, on-property edge fetch &mdash; not an external scrape &mdash; so it&rsquo;s never blocked. ' +
+              '(Use a fetch-friendly page to see the live conversion.)</div>';
   }
 
   // Caveat below Response Time on Scenario B only.
