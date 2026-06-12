@@ -1318,7 +1318,7 @@ function bodyTextLength(html) {
 }
 
 // Shared per-crawler policy module (ESM) — dynamically imported so the demo and
-// the EdgeWorker use the EXACT same routing logic (edgeworker-orchestrator/crawler-policy.js).
+// the EdgeWorker use the EXACT same routing logic (edgeworker/crawler-policy.js).
 let _policyMod = null;
 async function crawlerPolicyModule() {
     if (!_policyMod) _policyMod = await import('./crawler-policy.js');
