@@ -973,6 +973,8 @@ function renderResults(d) {
 
 function renderCard(id, t, scenario, htmlSize, tokenData) {
   var isMarkdown = t.contentType.includes('markdown');
+  // The unified EdgeWorker emits harper-cache-md / harper-cache-html on a Harper hit.
+  var harperHit = /^harper-cache/.test((t.xServedBy || '').toLowerCase());
 
   // Edge Processing row — all three scenarios.
   var edgeRow = '';
@@ -980,15 +982,15 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
     edgeRow = statRow('Edge Processing', badge('Origin passthrough', 'b-bypass'));
   } else if (scenario === 'b') {
     edgeRow = statRow('Edge Processing',
-      (t.xServedBy === 'harper-cache' || t.xWasmExecution)
-        ? badge('Markdown conversion + cached', 'b-miss')
-        : badge('Not Confirmed', 'b-miss'));
+      harperHit          ? badge('Served from cache', 'b-hit')
+      : t.xWasmExecution ? badge('Markdown conversion + cached', 'b-miss')
+      :                    badge('Not Confirmed', 'b-miss'));
   } else if (scenario === 'c') {
     var cHit = (t.xCache || '').toUpperCase().includes('HIT');
     edgeRow = statRow('Edge Processing',
-      (t.xServedBy === 'harper-cache' || cHit) ? badge('Served from cache', 'b-hit')
-      : t.xWasmExecution                       ? badge('Markdown conversion + cached', 'b-miss')
-      :                                           badge('Not Confirmed', 'b-miss'));
+      (harperHit || cHit) ? badge('Served from cache', 'b-hit')
+      : t.xWasmExecution  ? badge('Markdown conversion + cached', 'b-miss')
+      :                     badge('Not Confirmed', 'b-miss'));
   }
 
   // Response size. For the AI scenarios, show the size of the AI-optimized
@@ -1043,7 +1045,7 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
     statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
     rtCaveat +
     statRow('Content Format', ctBadge(t.contentType, scenario)) +
-    statRow('Cache Status',   cacheBadge(t.xCache, scenario)) +
+    statRow('Cache Status',   cacheBadge(t, scenario)) +
     edgeRow +
     statRow('Served by', servedByBadge(t, scenario)) +
     statRow('Response Size',  sizeStr) +
@@ -1067,11 +1069,15 @@ function ctBadge(ct, scenario) {
   return badge(ct || 'unknown', 'b-bypass');
 }
 
-function cacheBadge(xc, scenario) {
-  var v = (xc || '').toUpperCase();
-  // Wording follows the active scenario: Harper-backed scenarios cache in Harper;
-  // the edge-convert scenario has no Harper — its only cache is the Akamai CDN.
+function cacheBadge(t, scenario) {
+  // Harper-backed scenarios cache in Harper — the truth is in X-Served-By, not the
+  // CDN's X-Cache (which always misses when the EdgeWorker runs). The edge-convert
+  // scenario has no Harper, so its only cache is the Akamai CDN (X-Cache).
   var harper = !!(scenarioFeatures && scenarioFeatures.harperCache);
+  var sb = (t.xServedBy || '').toLowerCase();
+  if (/^harper-cache/.test(sb))            return badge('Harper Cache Hit', 'b-hit');
+  if (harper && /fermyon|origin/.test(sb)) return badge('Cache Miss → Harper', 'b-miss');
+  var v = (t.xCache || '').toUpperCase();   // CDN scenario / passthrough
   if (v.includes('HIT'))  return badge(harper ? 'Harper Cache Hit' : 'CDN Cache Hit', 'b-hit');
   if (v.includes('MISS')) return badge(harper ? 'Cache Miss → Harper' : 'CDN Cache Miss', 'b-miss');
   return badge('Bypassed', 'b-bypass');
