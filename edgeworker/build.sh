@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "Building unified EdgeWorker bundle (Phase B)…"
 tar -czvf "$SCRIPT_DIR/bundle.tgz" \
   -C "$SCRIPT_DIR" \
-  bundle.json main.js harper-read.js harper-client.js crawler-policy.js
+  bundle.json main.js harper-read.js harper-client.js crawler-policy.js demo-presets.js
 
 echo ""
 echo "Bundle created: $SCRIPT_DIR/bundle.tgz"

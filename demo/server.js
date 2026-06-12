@@ -48,6 +48,7 @@ function resolveScenario(id) {
         wasmUrl: s.wasmUrl || WASM_URL,
         edgeIp: s.edgeIp || '',
         stagingHost: s.stagingHost || '',
+        ewScenario: s.ewScenario || '',
         features: s.features || {}
     };
 }
@@ -127,7 +128,9 @@ function makeEdgeRequest(targetUrl, extraHeaders = {}, cfg = null) {
                 ? '/?url=' + encodeURIComponent(targetUrl) + (harperScenario ? '&cb=' + Date.now() : '')
                 : new URL(targetUrl).pathname + (new URL(targetUrl).search || ''),
             method: 'GET',
-            headers: { 'Accept': '*/*', 'Host': host, ...extraHeaders },
+            // X-Demo-Scenario tells the demo-mode EW which scenario to apply (one EW,
+            // one property serves all scenarios). Ignored unless PMUSER_DEMO_MODE=true.
+            headers: { 'Accept': '*/*', 'Host': host, ...(cfg && cfg.ewScenario ? { 'X-Demo-Scenario': cfg.ewScenario } : {}), ...extraHeaders },
             agent: sslAgent
         };
 

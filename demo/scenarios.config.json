@@ -6,21 +6,23 @@
       "label": "Edge Convert + CDN Cache",
       "blurb": "Akamai Functions converts HTML→Markdown at the edge; CDN-cached; no Harper.",
       "source": "edge-ai-markdown",
-      "host": "stopwaitingshipit.com",
+      "host": "nobodycaresworkharder.me",
+      "ewScenario": "cdn-cache",
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
-      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
+      "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
       "features": { "harperCache": false, "renderLab": false, "perCrawler": false }
     },
     {
       "id": "write-through-cache",
       "label": "Write-through Markdown Cache",
       "blurb": "First AI bot converts via Akamai Functions and writes through to Harper; returning bots are served from Harper cache.",
-      "source": "fermyon-convert-harper-md-cache",
-      "host": "momentumoverperfection.com",
+      "source": "harper-cache-pipeline",
+      "host": "nobodycaresworkharder.me",
+      "ewScenario": "md-cache",
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
-      "stagingHost": "momentumoverperfection.com.edgekey-staging.net",
+      "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
       "features": { "harperCache": true, "renderLab": false, "perCrawler": false }
     },
     {
@@ -29,6 +31,7 @@
       "blurb": "Harper prerenders unified HTML+Markdown from one render; serves HTML to search engines and Markdown to AI; Render Lab tuning + per-crawler negotiation.",
       "source": "harper-prerender-html-md-cache-fermyon-fallback",
       "host": "nobodycaresworkharder.me",
+      "ewScenario": "prerender",
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
@@ -36,8 +39,10 @@
     }
   ],
   "_notes": {
+    "collapsed": "All scenarios now target ONE property (nobodycaresworkharder.me). The unified EdgeWorker selects the scenario per request from the X-Demo-Scenario header (= ewScenario), enabled by PMUSER_DEMO_MODE=true on that property. One EW, one property.",
+    "ewScenario": "Sent as the X-Demo-Scenario header; maps to the EdgeWorker's demo-mode preset (cdn-cache | md-cache | convert-cache | prerender).",
     "edgeIp": "Pin a specific edge IP to override everything (rarely needed).",
-    "stagingHost": "Staging edge hostname; resolved fresh at request time when AKAMAI_STAGING=1, so each scenario hits its own edge. Default if blank: <host>.edgekey-staging.net. If a property is Standard-TLS, use .edgesuite-staging.net instead.",
+    "stagingHost": "Staging edge hostname; resolved fresh at request time when AKAMAI_STAGING=1. Default if blank: <host>.edgekey-staging.net. If a property is Standard-TLS, use .edgesuite-staging.net instead.",
     "run": "Staging demo: AKAMAI_STAGING=1 npm start"
   }
 }

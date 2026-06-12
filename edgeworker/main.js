@@ -5,6 +5,7 @@ import { TransformStream } from 'streams';
 import { readMarkdown, urlToKey } from './harper-read.js';
 import { fetchFromHarper, fetchHtmlFromHarper } from './harper-client.js';
 import { parseCrawlerPolicy, detectBotKind, resolveRepresentation } from './crawler-policy.js';
+import { demoPreset } from './demo-presets.js';
 
 // Unified read-only EdgeWorker. One bundle, four scenarios by PMUSER_* config:
 //   cdn-cache      HARPER_ENABLED=false                                   → Fermyon → MD (Akamai CDN)
@@ -52,6 +53,15 @@ export async function responseProvider(request) {
             WASM_URL:         resolveHttpUrl(request.getVariable('PMUSER_WASM_URL'),
                 'https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app'),
         };
+
+        // Demo mode: one EW on one property serves EVERY scenario, chosen per request
+        // via the X-Demo-Scenario header. Gated by PMUSER_DEMO_MODE so it only applies
+        // on the demo property — never on a customer property (a request could
+        // otherwise flip WRITE_THROUGH / HARPER_ENABLED etc.).
+        if (request.getVariable('PMUSER_DEMO_MODE') === 'true') {
+            const preset = demoPreset((request.getHeader('x-demo-scenario') ?? [])[0]);
+            if (preset) Object.assign(cfg, preset);
+        }
 
         const aiUasRaw = request.getVariable('PMUSER_AI_CRAWLER_UAS') ?? '';
         const aiCrawlerUas = aiUasRaw
@@ -125,7 +135,7 @@ async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
 
     if (!wasm.ok) {
         const err = await wasm.text();
-        const h = { 'X-Wasm-Execution': ['failed'], 'Cache-Control': ['no-store'], 'X-EW-Version': ['2.1.1'] };
+        const h = { 'X-Wasm-Execution': ['failed'], 'Cache-Control': ['no-store'], 'X-EW-Version': ['2.2.0'] };
         if (readReason) h['X-Harper-Read-Reason'] = [readReason];
         return createResponse(500, h, `Wasm Error: ${err}`);
     }
@@ -138,7 +148,7 @@ async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
         'X-Served-By':      [harperBackend ? 'fermyon-fallback' : 'fermyon-origin'],
         'X-Cache-Write':    [cfg.WRITE_THROUGH ? ((wasm.getHeader('X-Harper-Write') ?? ['unknown'])[0] ?? 'unknown') : 'skip'],
         'X-Bot-Kind':       [botKind || 'none'],
-        'X-EW-Version':     ['2.1.1'],
+        'X-EW-Version':     ['2.2.0'],
     };
     if (readReason) out['X-Harper-Read-Reason'] = [readReason];
     return createResponse(200, out, wasm.body);
@@ -155,7 +165,7 @@ async function serveHtml(targetUrl, cfg, botKind) {
                 'Cache-Control': ['max-age=3600, public'],
                 'X-Served-By':   ['harper-cache-html'],
                 'X-Bot-Kind':    [botKind || 'none'],
-                'X-EW-Version':  ['2.1.1'],
+                'X-EW-Version':  ['2.2.0'],
             }, result.response.body);
         }
         return await originHtml(targetUrl, botKind, result.reason);
@@ -165,7 +175,7 @@ async function serveHtml(targetUrl, cfg, botKind) {
 
 async function originHtml(targetUrl, botKind, fallbackReason) {
     const origin = await httpRequest(targetUrl, { method: 'GET' });
-    const headers = { 'X-Served-By': ['origin-fallback'], 'X-Bot-Kind': [botKind || 'none'], 'X-EW-Version': ['2.1.1'] };
+    const headers = { 'X-Served-By': ['origin-fallback'], 'X-Bot-Kind': [botKind || 'none'], 'X-EW-Version': ['2.2.0'] };
     for (const name of ORIGIN_PASSTHROUGH_HEADERS) {
         const v = origin.getHeader(name);
         if (v && v.length) headers[name] = v;
