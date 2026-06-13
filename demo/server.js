@@ -1034,10 +1034,15 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
               '(Use a fetch-friendly page to see the live conversion.)</div>';
   }
 
-  // Caveat below Response Time on Scenario B only.
+  // Caveat below Response Time on Scenario B only — scenario-accurate:
+  //  • Harper hit (e.g. prerender): the render happened ahead of time, out of band;
+  //    a higher first-visit time is connection warm-up, not extra work.
+  //  • conversion (md-cache cold miss): the convert happens in parallel; repeats are faster.
   var rtCaveat = scenario === 'b'
     ? '<div style="font-size:11px;color:#a8a8aa;line-height:1.4;padding:2px 0 6px">' +
-      'First-visit conversion happens in parallel — cached responses are typically faster on repeat visits.' +
+      (harperHit
+        ? 'Served from the prerender cache — the page was rendered once, ahead of time. A higher first-visit time here is connection warm-up, not extra work.'
+        : 'First-visit conversion happens in parallel — cached responses are typically faster on repeat visits.') +
       '</div>'
     : '';
 
