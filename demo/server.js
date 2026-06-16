@@ -240,20 +240,24 @@ async function runTests(targetUrl, fixtureFile, cfg = null) {
         ? Promise.resolve(loadFixtureTokens(fixtureFile))
         : fetchTokenComparison(targetUrl, cfg);
 
+    const botHeaders = {
+        'X-Verified-Bot': 'true',
+        'Pragma': 'akamai-x-cache-on'
+    };
+
     const [testA, tokenData] = await Promise.all([
         makeEdgeRequest(targetUrl, {}, cfg),
         tokenPromise
     ]);
-    const testB = await makeEdgeRequest(targetUrl, {
-        'X-Verified-Bot': 'true',
-        'Pragma': 'akamai-x-cache-on'
-    }, cfg);
-    // Allow extra time for the edge cache to propagate before the cache-hit test.
+    const testB = await makeEdgeRequest(targetUrl, botHeaders, cfg);
+
+    // Return visit. We don't poll for a Harper hit: a real AI crawler won't return
+    // within ~2s, so over this gap the write/render is racy and the live hit/miss is
+    // inconsistent — the cards talk-track over it rather than display it (see
+    // renderCard). A short fixed delay keeps the CDN scenario's edge cache warm.
     await new Promise(r => setTimeout(r, 2000));
-    const testC = await makeEdgeRequest(targetUrl, {
-        'X-Verified-Bot': 'true',
-        'Pragma': 'akamai-x-cache-on'
-    }, cfg);
+    const testC = await makeEdgeRequest(targetUrl, botHeaders, cfg);
+
     return { testA, testB, testC, tokenData, scenario: cfg ? cfg.id : null };
 }
 
@@ -431,30 +435,12 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 .fixture-btn.active{background:#FF8B00;color:#fff;border-color:#FF8B00}
 
 /* ── Render Lab ── */
-.lab-opts{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
-.lab-lbl{display:block;font-size:11px;font-weight:700;color:#6b7280;margin-bottom:5px}
 .lab-input{width:100%;padding:9px 11px;border:1.5px solid #d4dbe3;border-radius:7px;
            font-size:13px;color:#002F6C;outline:none;font-family:inherit;background:#fff}
 .lab-input:focus{border-color:#00A4EB}
-.lab-opts > div{display:flex;flex-direction:column}
-.lab-desc{font-size:10px;color:#94a3b8;line-height:1.4;margin:0 0 7px}
-.lab-opts .lab-input{margin-top:auto}
 .lab-actions{display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap}
-.clear-btn{background:#eef2f6;border:1.5px solid #d4dbe3;color:#475569;padding:8px 16px;
-           border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
-.clear-btn:hover{background:#e2e8f0}
-.clear-btn.clear-all{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
-.clear-btn.clear-all:hover{background:#fee2e2}
 .lab-status{font-size:13px;color:#6b7280}
 .lab-results{margin-top:20px;border-top:1px solid #f0f4f7;padding-top:18px}
-.lab-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.lab-metric{background:#f7f9fb;border:1px solid #e8edf2;border-radius:8px;padding:12px 14px}
-.lab-m-l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
-         color:#a8a8aa;margin-bottom:6px}
-.lab-m-n{font-size:22px;font-weight:800;color:#002F6C}
-.lab-m-n.good{color:#0369a1}
-.lab-m-sub{font-size:11px;color:#FF8B00;font-weight:700;margin-top:4px}
-@media(max-width:760px){.lab-opts{grid-template-columns:1fr 1fr}.lab-grid{grid-template-columns:1fr 1fr}}
 
 /* ── Tabs ── */
 .tabs{display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:28px}
@@ -489,7 +475,7 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 
   <div class="tabs">
     <button class="tab active" id="tab-btn-demo" type="button" onclick="switchTab('demo')">Live Demo</button>
-    <button class="tab" id="tab-btn-lab" type="button" onclick="switchTab('lab')">Render Lab</button>
+    <button class="tab" id="tab-btn-lab" type="button" onclick="switchTab('lab')">Per-Crawler View</button>
   </div>
 
   <div id="tab-demo" class="tab-panel">
@@ -597,55 +583,14 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
   </div><!-- /tab-demo -->
 
   <div id="tab-lab" class="tab-panel" style="display:none">
-  <div class="section-title">Render Lab &mdash; Prerender Tuning &amp; Cache Controls</div>
+  <div class="section-title">Per-Crawler Content Negotiation</div>
   <div class="url-form">
-    <label for="lab-url">Render any URL with custom options
-      <span class="url-hint">&mdash; see the un-rendered shell vs the headless-rendered result, and the Markdown an AI crawler receives</span>
-    </label>
-    <div class="url-row">
+    <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Enter a URL and pick a crawler &mdash; the policy serves <strong>HTML or Markdown from the same cached render</strong>. Mirrors the EdgeWorker's <code>X-Bot-Kind</code> routing (shared <code>crawler-policy.js</code>).</p>
+    <div class="url-row" style="margin-bottom:12px">
       <input type="url" id="lab-url" class="url-input"
              placeholder="https://www.example.com/product"
              value="https://www.verizon.com/business/shop/products/devices/smartphones/apple-iphone-17-pro-max" />
-      <button class="run-btn" id="lab-run" onclick="runRenderLab()">&#9654;&nbsp; Render</button>
     </div>
-    <div class="lab-opts">
-      <div><label class="lab-lbl">Device</label>
-        <div class="lab-desc">Viewport the page renders at &mdash; changes responsive layout and which assets load.</div>
-        <select id="lab-device" class="lab-input"><option>desktop</option><option>mobile</option><option>tablet</option></select></div>
-      <div><label class="lab-lbl">Wait until</label>
-        <div class="lab-desc">When to capture the render &mdash; from first DOM (fast) to full network-idle (most complete).</div>
-        <select id="lab-wait" class="lab-input"><option value="">(default)</option><option>domcontentloaded</option><option>load</option><option>networkidle2</option><option>networkidle0</option></select></div>
-      <div><label class="lab-lbl">Settle ms (0=off)</label>
-        <div class="lab-desc">Max extra time for late JavaScript/content to finish before capturing anyway.</div>
-        <input id="lab-settle" class="lab-input" placeholder="(default 12000)" /></div>
-      <div><label class="lab-lbl">Idle ms</label>
-        <div class="lab-desc">How long network traffic must stay quiet to count as &ldquo;idle.&rdquo;</div>
-        <input id="lab-idle" class="lab-input" placeholder="(default 600)" /></div>
-      <div><label class="lab-lbl">Wait for selector</label>
-        <div class="lab-desc">Hold the render until this CSS selector appears &mdash; for content injected late by JS.</div>
-        <input id="lab-selector" class="lab-input" placeholder="e.g. h1" /></div>
-    </div>
-    <div class="lab-actions">
-      <button class="clear-btn" id="lab-clear-url" onclick="clearCache(false)">Clear this URL</button>
-      <button class="clear-btn clear-all" id="lab-clear-all" onclick="clearCache(true)">Clear ALL cache</button>
-      <span class="lab-status" id="lab-status"></span>
-    </div>
-    <div class="lab-results" id="lab-results" style="display:none">
-      <div class="lab-grid">
-        <div class="lab-metric"><div class="lab-m-l">Raw fetch &middot; body text</div><div class="lab-m-n" id="lab-raw-text">&mdash;</div></div>
-        <div class="lab-metric"><div class="lab-m-l">Rendered &middot; body text</div><div class="lab-m-n" id="lab-ren-text">&mdash;</div></div>
-        <div class="lab-metric"><div class="lab-m-l">Raw HTML tokens</div><div class="lab-m-n" id="lab-raw-tok">&mdash;</div></div>
-        <div class="lab-metric"><div class="lab-m-l">Rendered MD tokens</div><div class="lab-m-n" id="lab-md-tok">&mdash;</div><div class="lab-m-sub" id="lab-ratio"></div></div>
-      </div>
-      <div id="lab-meta" style="margin:14px 0 4px"></div>
-      <div class="preview-label">Derived Markdown (sample)</div>
-      <div class="preview" id="lab-md" style="max-height:240px;overflow:auto"></div>
-    </div>
-  </div>
-
-  <div class="section-title" style="margin-top:24px">Per-Crawler Content Negotiation</div>
-  <div class="url-form">
-    <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Same URL (from the Render Lab field above), different crawler &mdash; the policy serves <strong>HTML or Markdown from the same cached render</strong>. Mirrors the EdgeWorker's <code>X-Bot-Kind</code> routing (shared <code>crawler-policy.js</code>).</p>
     <div class="lab-actions" style="margin-top:0">
       <select id="crawler-bot" class="lab-input" style="max-width:260px">
         <option value="googlebot">Googlebot (Search) → HTML</option>
@@ -752,63 +697,6 @@ function runCrawlerView() {
     .catch(function(e){ btn.disabled = false; status.textContent = 'Request failed: ' + e.message; });
 }
 
-// ── Render Lab ──────────────────────────────────────────────────────────────
-function runRenderLab() {
-  var btn = document.getElementById('lab-run');
-  var status = document.getElementById('lab-status');
-  var url = document.getElementById('lab-url').value.trim();
-  if (!url) { alert('Enter a URL'); return; }
-  var payload = {
-    url: url,
-    deviceType: document.getElementById('lab-device').value,
-    waitUntil: document.getElementById('lab-wait').value,
-    settleMs: document.getElementById('lab-settle').value,
-    idleMs: document.getElementById('lab-idle').value,
-    selector: document.getElementById('lab-selector').value
-  };
-  btn.disabled = true;
-  status.textContent = 'Rendering\\u2026 (10\\u201340s for SPAs)';
-  fetch('/render-lab', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      btn.disabled = false; status.textContent = '';
-      if (d.error) { status.textContent = 'Error: ' + d.error; return; }
-      document.getElementById('lab-results').style.display = 'block';
-      document.getElementById('lab-raw-text').textContent = (d.raw.textLen || 0).toLocaleString() + ' ch';
-      var rt = document.getElementById('lab-ren-text');
-      rt.textContent = (d.rendered.textLen || 0).toLocaleString() + ' ch';
-      rt.className = 'lab-m-n ' + ((d.rendered.textLen > d.raw.textLen * 1.2 || d.raw.textLen < 50) ? 'good' : '');
-      document.getElementById('lab-raw-tok').textContent = (d.raw.htmlTokens || 0).toLocaleString();
-      document.getElementById('lab-md-tok').textContent = (d.rendered.markdownTokens || 0).toLocaleString();
-      var ratio = (d.raw.htmlTokens && d.rendered.markdownTokens) ? (d.raw.htmlTokens / d.rendered.markdownTokens).toFixed(1) : 0;
-      document.getElementById('lab-ratio').textContent = ratio ? (ratio + '\\u00d7 fewer than raw HTML') : '';
-      var eo = d.effectiveOptions || {};
-      document.getElementById('lab-meta').innerHTML =
-        '<span class="badge b-edge">HTTP ' + d.statusCode + '</span> ' +
-        '<span class="badge b-bypass">' + (d.elapsedMs || 0) + ' ms</span> ' +
-        '<span class="badge b-md">wait: ' + eo.waitUntil + '</span> ' +
-        '<span class="badge b-bypass">settle: ' + eo.settleTimeoutMs + '</span> ' +
-        '<span class="badge b-bypass">selector: ' + (eo.waitForSelector || 'none') + '</span>';
-      document.getElementById('lab-md').textContent = d.markdownSample || '(no markdown \\u2014 non-200 or empty render)';
-    })
-    .catch(function(e){ btn.disabled = false; status.textContent = 'Request failed: ' + e.message; });
-}
-
-function clearCache(all) {
-  var status = document.getElementById('lab-status');
-  var url = document.getElementById('lab-url').value.trim();
-  if (!all && !url) { alert('Enter a URL'); return; }
-  status.textContent = 'Clearing cache\\u2026';
-  fetch('/cache-clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(all ? { all: true } : { url: url }) })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      status.textContent = d.ok
-        ? ('Cleared ' + d.cleared + ' page(s)' + (d.jobsCleared ? (' + ' + d.jobsCleared + ' jobs') : ''))
-        : ('Error: ' + (d.error || '?'));
-    })
-    .catch(function(e){ status.textContent = 'Clear failed: ' + e.message; });
-}
-
 function loadFixtures() {
   fetch('/fixtures')
     .then(function(r) { return r.json(); })
@@ -838,8 +726,8 @@ function loadFixtures() {
               btn.classList.add('active');
               selectedFixture = page;
               document.getElementById('target-url').value = page.url;
-              // Also pre-fill the Render Lab so the same page can be rendered
-              // through the local prerender pipeline in one click.
+              // Also pre-fill the per-crawler URL so the same page can be checked
+              // through the crawler-negotiation view in one click.
               var labUrl = document.getElementById('lab-url');
               if (labUrl) labUrl.value = page.url;
             }
@@ -975,6 +863,10 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
   var isMarkdown = t.contentType.includes('markdown');
   // The unified EdgeWorker emits harper-cache-md / harper-cache-html on a Harper hit.
   var harperHit = /^harper-cache/.test((t.xServedBy || '').toLowerCase());
+  // Harper-backed scenarios (write-through, prerender): the cache-state rows are
+  // hidden because a ~2s gap between visits races the write/render, so the live
+  // result is inconsistent and misleading. We talk-track over it instead.
+  var harperScenario = !!(scenarioFeatures && scenarioFeatures.harperCache);
 
   // Edge Processing row — all three scenarios.
   var edgeRow = '';
@@ -1046,13 +938,31 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
       '</div>'
     : '';
 
+  // Scenario C only, Harper scenarios: drop Cache Status / Edge Processing /
+  // Served by (race-prone over a 2s gap) and explain it instead. Scenario B and
+  // the CDN scenario keep the real rows.
+  var cacheBlock;
+  if (harperScenario && scenario === 'c') {
+    cacheBlock =
+      '<div style="font-size:12px;color:#475569;line-height:1.55;background:#f1f5f9;' +
+      'border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin:6px 0">' +
+      'This demo sends the two visits just seconds apart, so the cache may still be writing when the ' +
+      'second one arrives \\u2014 too tight a window to show a reliable result here. In practice, AI ' +
+      'crawlers come back minutes or hours later, well after the page is cached, so return visits are ' +
+      'served straight from cache.' +
+      '</div>';
+  } else {
+    cacheBlock =
+      statRow('Cache Status',   cacheBadge(t, scenario)) +
+      edgeRow +
+      statRow('Served by', servedByBadge(t, scenario));
+  }
+
   document.getElementById(id).innerHTML =
     statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
     rtCaveat +
     statRow('Content Format', ctBadge(t.contentType, scenario)) +
-    statRow('Cache Status',   cacheBadge(t, scenario)) +
-    edgeRow +
-    statRow('Served by', servedByBadge(t, scenario)) +
+    cacheBlock +
     statRow('Response Size',  sizeStr) +
     preview;
 }
