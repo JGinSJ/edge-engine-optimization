@@ -17,7 +17,7 @@ The EdgeWorker never writes Harper itself (blocked at the edge) — the Akamai F
 
 | Path | What it is |
 |---|---|
-| **`demo/`** | The unified tabbed sales-engineering demo (3 scenarios) — token savings, cache behavior, Render Lab, per-crawler negotiation. |
+| **`demo/`** | The unified tabbed sales-engineering demo (3 scenarios) — token savings, cache behavior, per-crawler content negotiation. |
 | **`edgeworker/`** | The single unified **read-only EdgeWorker** — one bundle, four scenarios by `PMUSER_*` property config. |
 | **`fermyon-convert-harper-md-cache/akamai-ai-markdown/`** | The **Akamai Function** converter (Rust/Wasm) — HTML→Markdown, with optional Harper write-through. Deployed via `spin aka`. |
 | **`harper-prerender-html-md-cache-fermyon-fallback/`** | The **prerender backend** — headless `renderer/` + the `harper-prerender/` Harper component that produces the unified HTML+Markdown render. |
