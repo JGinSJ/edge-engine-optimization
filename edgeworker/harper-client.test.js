@@ -154,7 +154,7 @@ test('thrown error with "timeout" in message returns timeout', async () => {
 // Request shape — headers and URL
 // ---------------------------------------------------------------------------
 
-test('Authorization header is set to Bearer <token>', async () => {
+test('Authorization falls back to Bearer <token> when no authHeader', async () => {
     let capturedHeaders;
     const capture = async (_url, opts) => {
         capturedHeaders = opts.headers;
@@ -162,6 +162,16 @@ test('Authorization header is set to Bearer <token>', async () => {
     };
     await fetchFromHarper(TARGET, BASE_OPTS, capture);
     assert.deepEqual(capturedHeaders['Authorization'], ['Bearer tok']);
+});
+
+test('Authorization uses the provided authHeader (Basic) verbatim', async () => {
+    let capturedHeaders;
+    const capture = async (_url, opts) => {
+        capturedHeaders = opts.headers;
+        return makeResponse({ status: 200, headers: { 'content-type': 'text/markdown' } });
+    };
+    await fetchFromHarper(TARGET, { ...BASE_OPTS, authHeader: 'Basic YWRtaW46cHc=' }, capture);
+    assert.deepEqual(capturedHeaders['Authorization'], ['Basic YWRtaW46cHc=']);
 });
 
 test('URL without query string: X-Query-String header is absent', async () => {
