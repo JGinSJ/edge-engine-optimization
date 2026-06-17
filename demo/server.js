@@ -234,21 +234,6 @@ async function fetchTokenComparison(targetUrl, cfg = null) {
     };
 }
 
-// URL → Harper cache key. Byte-for-byte mirror of the EdgeWorker's urlToKey
-// (edgeworker/harper-read.js): URL-safe base64 so the key matches what the EW wrote
-// on the first visit. Kept in sync by hand — it's a tiny, stable encoder.
-const HARPER_B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-function urlToKey(url) {
-    let out = '';
-    for (let i = 0; i < url.length; i += 3) {
-        const a = url.charCodeAt(i), b = url.charCodeAt(i + 1) || 0, c = url.charCodeAt(i + 2) || 0;
-        out += HARPER_B64[a >> 2] + HARPER_B64[((a & 3) << 4) | (b >> 4)];
-        if (i + 1 < url.length) out += HARPER_B64[((b & 15) << 2) | (c >> 6)];
-        if (i + 2 < url.length) out += HARPER_B64[c & 63];
-    }
-    return out;
-}
-
 async function runTests(targetUrl, fixtureFile, cfg = null) {
     // Fixture takes priority over live fetch — falls back to live fetch when absent.
     const tokenPromise = fixtureFile
@@ -287,7 +272,6 @@ async function runTests(targetUrl, fixtureFile, cfg = null) {
         testC = Object.assign({}, testB, {
             xServedBy: 'harper-cache-md',
             fromWriteThrough: true,
-            harperKey: urlToKey(targetUrl),
         });
     } else {
         await new Promise(r => setTimeout(r, 2000));
@@ -976,29 +960,22 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
 
   // Write-through Scenario C (option A): the return visit is served from the exact
   // entry the first visit wrote — the write is confirmed (X-Cache-Write), so we
-  // present the cached result rather than a re-raced live read. No measured response
-  // time: it's the same bytes B produced, now coming from cache under the shown key.
+  // present the cached result rather than a re-raced live read.
   if (t.fromWriteThrough) {
-    var shortKey = t.harperKey
-      ? (t.harperKey.length > 30 ? t.harperKey.slice(0, 26) + '\\u2026' : t.harperKey)
-      : '';
-    var keyRow = shortKey
-      ? statRow('Cache Key', '<code style="font-size:11px;background:#eef2f6;padding:1px 6px;border-radius:4px;color:#334155">' + esc(shortKey) + '</code>')
-      : '';
     var writeRow = t.xCacheWrite
       ? statRow('Cache Write', badge(t.xCacheWrite, t.xCacheWrite === 'ok' ? 'b-ok' : 'b-err'))
       : '';
     document.getElementById(id).innerHTML =
+      statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
       statRow('Content Format', ctBadge(t.contentType, scenario)) +
       statRow('Cache Status',   cacheBadge(t, scenario)) +
       edgeRow +
       statRow('Served by', servedByBadge(t, scenario)) +
-      keyRow +
       writeRow +
       statRow('Response Size',  sizeStr) +
       '<div style="font-size:12px;color:#065f46;line-height:1.55;background:#ecfdf5;' +
       'border:1px solid #a7f3d0;border-radius:8px;padding:10px 12px;margin:6px 0">' +
-      'This is the exact entry the first crawler visit wrote to Harper, under the key above. ' +
+      'This is the exact entry the first crawler visit wrote to Harper. ' +
       'Every subsequent crawler is served this straight from cache \\u2014 no reconversion, no origin hit. ' +
       '(A real crawler returns minutes or hours later, well after the write, so the return visit always hits.)' +
       '</div>' +
