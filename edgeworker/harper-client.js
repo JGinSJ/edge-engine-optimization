@@ -55,11 +55,13 @@ async function requestHarper(harperUrl, headers, timeoutMs, acceptsContentType, 
 
 /**
  * Build the auth/secret headers shared by both endpoints.
- * Sends the bot-key header the component validates, and keeps the legacy
- * `Authorization: Bearer` header for compatibility with the baseline contract.
+ * Harper Fabric's data API authenticates with HTTP Basic — Bearer is rejected with
+ * 401 "Must login" — so use the caller-computed `authHeader` (Basic) when provided,
+ * falling back to `Bearer <token>` for older callers. The bot-key header is still
+ * sent for the prerender component's own gate.
  */
-function authHeaders({ token, botKey, keyHeader = DEFAULT_KEY_HEADER }) {
-    const headers = { 'Authorization': ['Bearer ' + token] };
+function authHeaders({ authHeader, token, botKey, keyHeader = DEFAULT_KEY_HEADER }) {
+    const headers = { 'Authorization': [authHeader || ('Bearer ' + token)] };
     const keyValue = botKey ?? token;
     if (keyHeader && keyValue != null) headers[keyHeader] = [String(keyValue)];
     return headers;
@@ -84,7 +86,7 @@ function authHeaders({ token, botKey, keyHeader = DEFAULT_KEY_HEADER }) {
  * >}
  * `body` is set only for `http-error` and contains the first 200 chars of Harper's response body.
  */
-export async function fetchFromHarper(targetUrl, { baseUrl, token, timeoutMs, botKey, keyHeader }, _httpRequest) {
+export async function fetchFromHarper(targetUrl, { baseUrl, authHeader, token, timeoutMs, botKey, keyHeader }, _httpRequest) {
     const httpRequest = _httpRequest ?? await getRuntimeHttpRequest();
 
     // Separate path from query string — Harper wants them in different slots
@@ -94,7 +96,7 @@ export async function fetchFromHarper(targetUrl, { baseUrl, token, timeoutMs, bo
 
     const harperUrl = baseUrl + '/page_content?path=' + encodeURIComponent(cleanPath);
 
-    const headers = authHeaders({ token, botKey, keyHeader });
+    const headers = authHeaders({ authHeader, token, botKey, keyHeader });
     if (qs) headers['X-Query-String'] = [qs]; // Harper auto-prepends ? if missing
 
     // Accept text/markdown, or a payload tagged with x-markdown-version (gzip blobs
@@ -120,7 +122,7 @@ export async function fetchFromHarper(targetUrl, { baseUrl, token, timeoutMs, bo
  */
 export async function fetchHtmlFromHarper(
     targetUrl,
-    { baseUrl, token, timeoutMs, botKey, keyHeader, deviceType = 'desktop' },
+    { baseUrl, authHeader, token, timeoutMs, botKey, keyHeader, deviceType = 'desktop' },
     _httpRequest
 ) {
     const httpRequest = _httpRequest ?? await getRuntimeHttpRequest();
@@ -128,7 +130,7 @@ export async function fetchHtmlFromHarper(
     const harperUrl =
         baseUrl + '/page/?url=' + encodeURIComponent(targetUrl) + '&deviceType=' + encodeURIComponent(deviceType);
 
-    const headers = authHeaders({ token, botKey, keyHeader });
+    const headers = authHeaders({ authHeader, token, botKey, keyHeader });
 
     const acceptsHtml = (ct) => ct.includes('text/html');
 
