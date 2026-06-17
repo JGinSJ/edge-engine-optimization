@@ -566,7 +566,7 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
         </div>
         <div class="card-body" id="body-c"></div>
         <div class="card-desc">
-          Every return visit from an AI crawler is served directly from Akamai&rsquo;s Global Edge Cache. Your origin server receives zero additional load from crawlers — permanently protected after the very first visit.
+          Every return visit from an AI crawler is served straight from cache — converted once on the first visit, never reconverted. Your origin server receives zero additional load from crawlers, permanently, after that very first visit.
         </div>
       </div>
 
@@ -973,12 +973,6 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
       statRow('Served by', servedByBadge(t, scenario)) +
       writeRow +
       statRow('Response Size',  sizeStr) +
-      '<div style="font-size:12px;color:#065f46;line-height:1.55;background:#ecfdf5;' +
-      'border:1px solid #a7f3d0;border-radius:8px;padding:10px 12px;margin:6px 0">' +
-      'This is the exact entry the first crawler visit wrote to Harper. ' +
-      'Every subsequent crawler is served this straight from cache \\u2014 no reconversion, no origin hit. ' +
-      '(A real crawler returns minutes or hours later, well after the write, so the return visit always hits.)' +
-      '</div>' +
       preview;
     return;
   }
