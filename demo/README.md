@@ -33,12 +33,18 @@ SNI/cert clashes). Per-scenario overrides live in `scenarios.config.json`
 | **Write-through Markdown Cache** | 1st AI bot converts + writes to Harper; returning bots served from Harper |
 | **Prerender + Per-Crawler** | One render → HTML for search engines, Markdown for AI; per-crawler content negotiation |
 
-> **Scenario C cache state.** For the Harper-backed scenarios (write-through,
-> prerender), the live run **doesn't display** Scenario C's cache hit/miss. The two
-> crawler visits are only ~2s apart, which races the cache write and makes the result
-> inconsistent; a real AI crawler returns minutes or hours later, well after the page
-> is cached. The Scenario C card explains this inline. (Edge Convert keeps its CDN
-> cache rows — that fills at the edge and hits immediately.)
+> **Scenario C cache state.** The two crawler visits in the demo are only ~2s apart,
+> which races the cache write/render — too tight to re-read reliably. How each
+> backend handles Scenario C:
+> - **Write-through:** the first visit's write is *confirmed* (`X-Cache-Write: ok`),
+>   so Scenario C is rendered from that exact entry — shown as a Harper hit with the
+>   cache key — rather than re-racing a live read. (A real crawler returns long after
+>   the write and always hits.)
+> - **Prerender:** the first visit only *triggers* an async render and writes nothing
+>   synchronously, so Scenario C can't be shown reliably; the card talk-tracks the
+>   timing inline.
+> - **Edge Convert (CDN):** keeps its real cache rows — the edge cache fills on the
+>   first visit and the return visit hits immediately.
 
 ## Seed the prerender cache (optional)
 

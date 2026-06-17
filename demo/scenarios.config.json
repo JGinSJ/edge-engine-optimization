@@ -11,7 +11,7 @@
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
-      "features": { "harperCache": false, "renderLab": false, "perCrawler": false }
+      "features": { "harperCache": false, "renderLab": false, "perCrawler": false, "writeThrough": false }
     },
     {
       "id": "write-through-cache",
@@ -23,7 +23,7 @@
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
-      "features": { "harperCache": true, "renderLab": false, "perCrawler": false }
+      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": true }
     },
     {
       "id": "prerender-per-crawler",
@@ -35,7 +35,7 @@
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "nobodycaresworkharder.me.edgekey-staging.net",
-      "features": { "harperCache": true, "renderLab": true, "perCrawler": true }
+      "features": { "harperCache": true, "renderLab": true, "perCrawler": true, "writeThrough": false }
     }
   ],
   "_notes": {
