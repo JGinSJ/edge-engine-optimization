@@ -71,18 +71,30 @@ fn header_string(req: &Request, name: &str) -> Option<String> {
 //
 // Replicates the EdgeWorker's write contract exactly:
 //   PUT {base}/markdown_cache/{key}
+//   Authorization: forwarded as X-Harper-Authorization (Basic for Harper Fabric)
 //   body { url: key, markdown, cached_at, content_type: "text/markdown" }
 // The key is computed EW-side (urlToKey = URL-safe base64) and forwarded as
 // X-Harper-Key, so read-key == write-key with no chance of drift. Fermyon can do
 // this PUT (full body, port 443) where the EdgeWorker is blocked by edge limits.
 async fn write_to_harper(req: &Request, markdown: &str) -> &'static str {
-    let (base, token, key) = match (
+    let (base, key) = match (
         header_string(req, "X-Harper-Url"),
-        header_string(req, "X-Harper-Token"),
         header_string(req, "X-Harper-Key"),
     ) {
-        (Some(b), Some(t), Some(k)) if !b.is_empty() && !k.is_empty() => (b, t, k),
+        (Some(b), Some(k)) if !b.is_empty() && !k.is_empty() => (b, k),
         _ => return "skip",
+    };
+    // Harper Fabric authenticates with HTTP Basic — the EdgeWorker computes the full
+    // Authorization value and forwards it as X-Harper-Authorization. Fall back to
+    // Bearer + X-Harper-Token for an older EdgeWorker that only sends the token.
+    let auth = header_string(req, "X-Harper-Authorization")
+        .filter(|a| !a.is_empty())
+        .or_else(|| header_string(req, "X-Harper-Token")
+            .filter(|t| !t.is_empty())
+            .map(|t| format!("Bearer {}", t)));
+    let auth = match auth {
+        Some(a) => a,
+        None => return "skip",
     };
     let cached_at = header_string(req, "X-Harper-Cached-At").unwrap_or_default();
 
@@ -98,7 +110,7 @@ async fn write_to_harper(req: &Request, markdown: &str) -> &'static str {
     let put_req = Request::builder()
         .method(Method::Put)
         .uri(endpoint)
-        .header("authorization", format!("Bearer {}", token))
+        .header("authorization", auth)
         .header("content-type", "application/json")
         .body(body.into_bytes())
         .build();

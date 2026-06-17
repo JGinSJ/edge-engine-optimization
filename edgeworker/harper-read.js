@@ -32,9 +32,42 @@ export function urlToKey(url) {
     return out;
 }
 
-export async function readMarkdown(mode, targetUrl, { baseUrl, token, timeoutMs }, _httpRequest) {
+// Standard base64 (with +/ and = padding) for HTTP Basic credentials — distinct from
+// the URL-safe urlToKey above. btoa/TextEncoder aren't guaranteed in EdgeWorkers, so
+// we derive UTF-8 bytes via encodeURIComponent (core JS, available everywhere).
+const STD_B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function utf8Bytes(str) {
+    const enc = encodeURIComponent(str);
+    const bytes = [];
+    for (let i = 0; i < enc.length; i++) {
+        if (enc[i] === '%') { bytes.push(parseInt(enc.substr(i + 1, 2), 16)); i += 2; }
+        else bytes.push(enc.charCodeAt(i));
+    }
+    return bytes;
+}
+function base64Std(bytes) {
+    let out = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+        const a = bytes[i], b = i + 1 < bytes.length ? bytes[i + 1] : 0, c = i + 2 < bytes.length ? bytes[i + 2] : 0;
+        out += STD_B64[a >> 2] + STD_B64[((a & 3) << 4) | (b >> 4)];
+        out += i + 1 < bytes.length ? STD_B64[((b & 15) << 2) | (c >> 6)] : '=';
+        out += i + 2 < bytes.length ? STD_B64[c & 63] : '=';
+    }
+    return out;
+}
+
+// Build the Harper Authorization header. The Harper Fabric data API authenticates
+// with HTTP Basic (username/password) — Bearer is rejected with 401 "Must login" —
+// so prefer Basic when a username is configured. Falls back to Bearer + token for
+// any caller/endpoint still using token auth.
+export function harperAuthHeader({ user, pass, token } = {}) {
+    if (user) return 'Basic ' + base64Std(utf8Bytes((user || '') + ':' + (pass || '')));
+    return 'Bearer ' + (token || '');
+}
+
+export async function readMarkdown(mode, targetUrl, { baseUrl, authHeader, token, timeoutMs }, _httpRequest) {
     const httpRequest = _httpRequest ?? await getRuntimeHttpRequest();
-    const auth = { 'Authorization': ['Bearer ' + token] };
+    const auth = { 'Authorization': [authHeader || ('Bearer ' + token)] };
 
     let url, headers = auth, parseJson;
     if (mode === 'page_content') {

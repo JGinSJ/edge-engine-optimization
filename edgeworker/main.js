@@ -2,7 +2,7 @@ import { httpRequest } from 'http-request';
 import { createResponse } from 'create-response';
 import { TextEncoder } from 'encoding';
 import { TransformStream } from 'streams';
-import { readMarkdown, urlToKey } from './harper-read.js';
+import { readMarkdown, urlToKey, harperAuthHeader } from './harper-read.js';
 import { fetchFromHarper, fetchHtmlFromHarper } from './harper-client.js';
 import { parseCrawlerPolicy, detectBotKind, resolveRepresentation } from './crawler-policy.js';
 import { demoPreset } from './demo-presets.js';
@@ -48,6 +48,10 @@ export async function responseProvider(request) {
             HARPER_WRITE_URL: resolveHttpUrl(request.getVariable('PMUSER_HARPER_WRITE_URL'),
                 'https://gq4-us-east5-a-1.ai-seo-pipeline.jgeronim-org.harperfabric.com'),
             HARPER_TOKEN:     request.getVariable('PMUSER_HARPER_TOKEN') ?? '',
+            // Harper Fabric's data API authenticates with HTTP Basic (user/pass), not
+            // Bearer. When these are set, markdown_cache reads + write-through use Basic.
+            HARPER_USER:      request.getVariable('PMUSER_HARPER_USER') ?? '',
+            HARPER_PASS:      request.getVariable('PMUSER_HARPER_PASS') ?? '',
             HARPER_BOT_KEY:   request.getVariable('PMUSER_HARPER_BOT_KEY') ?? '',
             HARPER_TIMEOUT_MS: parseInt(request.getVariable('PMUSER_HARPER_TIMEOUT_MS') ?? '1500', 10),
             WASM_URL:         resolveHttpUrl(request.getVariable('PMUSER_WASM_URL'),
@@ -109,7 +113,9 @@ async function serveMarkdown(targetUrl, cfg, botKind) {
     let read;
     if (cfg.HARPER_READ_MODE === 'markdown_cache') {
         read = await readMarkdown('markdown_cache', targetUrl,
-            { baseUrl: cfg.HARPER_URL, token: cfg.HARPER_TOKEN, timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
+            { baseUrl: cfg.HARPER_URL,
+              authHeader: harperAuthHeader({ user: cfg.HARPER_USER, pass: cfg.HARPER_PASS, token: cfg.HARPER_TOKEN }),
+              timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
     } else { // page_content (Harper self-populating backends)
         read = await fetchFromHarper(targetUrl,
             { baseUrl: cfg.HARPER_URL, token: cfg.HARPER_TOKEN, botKey: cfg.HARPER_BOT_KEY || undefined, timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
@@ -126,16 +132,20 @@ async function serveMarkdown(targetUrl, cfg, botKind) {
 async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
     const headers = { 'X-Target-URL': [targetUrl] };
     if (cfg.WRITE_THROUGH) {
-        headers['X-Harper-Url']       = [cfg.HARPER_WRITE_URL];
-        headers['X-Harper-Token']     = [cfg.HARPER_TOKEN];
-        headers['X-Harper-Key']       = [urlToKey(targetUrl)];
-        headers['X-Harper-Cached-At'] = [new Date().toISOString()];
+        headers['X-Harper-Url']           = [cfg.HARPER_WRITE_URL];
+        // Forward the full Authorization the converter should use for the Harper PUT
+        // (Basic for Harper Fabric). X-Harper-Token kept for back-compat with an older
+        // converter that still builds `Bearer <token>` itself.
+        headers['X-Harper-Authorization'] = [harperAuthHeader({ user: cfg.HARPER_USER, pass: cfg.HARPER_PASS, token: cfg.HARPER_TOKEN })];
+        headers['X-Harper-Token']         = [cfg.HARPER_TOKEN];
+        headers['X-Harper-Key']           = [urlToKey(targetUrl)];
+        headers['X-Harper-Cached-At']     = [new Date().toISOString()];
     }
     const wasm = await httpRequest(cfg.WASM_URL, { method: 'GET', headers });
 
     if (!wasm.ok) {
         const err = await wasm.text();
-        const h = { 'X-Wasm-Execution': ['failed'], 'Cache-Control': ['no-store'], 'X-EW-Version': ['2.2.0'] };
+        const h = { 'X-Wasm-Execution': ['failed'], 'Cache-Control': ['no-store'], 'X-EW-Version': ['2.3.0'] };
         if (readReason) h['X-Harper-Read-Reason'] = [readReason];
         return createResponse(500, h, `Wasm Error: ${err}`);
     }
@@ -148,7 +158,7 @@ async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
         'X-Served-By':      [harperBackend ? 'fermyon-fallback' : 'fermyon-origin'],
         'X-Cache-Write':    [cfg.WRITE_THROUGH ? ((wasm.getHeader('X-Harper-Write') ?? ['unknown'])[0] ?? 'unknown') : 'skip'],
         'X-Bot-Kind':       [botKind || 'none'],
-        'X-EW-Version':     ['2.2.0'],
+        'X-EW-Version':     ['2.3.0'],
     };
     if (readReason) out['X-Harper-Read-Reason'] = [readReason];
     return createResponse(200, out, wasm.body);
@@ -165,7 +175,7 @@ async function serveHtml(targetUrl, cfg, botKind) {
                 'Cache-Control': ['max-age=3600, public'],
                 'X-Served-By':   ['harper-cache-html'],
                 'X-Bot-Kind':    [botKind || 'none'],
-                'X-EW-Version':  ['2.2.0'],
+                'X-EW-Version':  ['2.3.0'],
             }, result.response.body);
         }
         return await originHtml(targetUrl, botKind, result.reason);
@@ -175,7 +185,7 @@ async function serveHtml(targetUrl, cfg, botKind) {
 
 async function originHtml(targetUrl, botKind, fallbackReason) {
     const origin = await httpRequest(targetUrl, { method: 'GET' });
-    const headers = { 'X-Served-By': ['origin-fallback'], 'X-Bot-Kind': [botKind || 'none'], 'X-EW-Version': ['2.2.0'] };
+    const headers = { 'X-Served-By': ['origin-fallback'], 'X-Bot-Kind': [botKind || 'none'], 'X-EW-Version': ['2.3.0'] };
     for (const name of ORIGIN_PASSTHROUGH_HEADERS) {
         const v = origin.getHeader(name);
         if (v && v.length) headers[name] = v;

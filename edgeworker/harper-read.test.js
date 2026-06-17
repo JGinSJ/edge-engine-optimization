@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { urlToKey, readMarkdown } from './harper-read.js';
+import { urlToKey, readMarkdown, harperAuthHeader } from './harper-read.js';
 
 // Mock the Akamai httpRequest: capture url/options, return a fake response.
 function mockHttp(status, body, captured) {
@@ -13,6 +13,24 @@ const CFG = { baseUrl: '/_harper', token: 'tok', timeoutMs: 1500 };
 
 test('urlToKey: URL-safe base64, no padding', () => {
     assert.equal(urlToKey('https://example.org'), 'aHR0cHM6Ly9leGFtcGxlLm9yZw');
+});
+
+test('harperAuthHeader: Basic when user set, matches standard base64', () => {
+    const expected = 'Basic ' + Buffer.from('admin:p@ss:word').toString('base64');
+    assert.equal(harperAuthHeader({ user: 'admin', pass: 'p@ss:word' }), expected);
+});
+
+test('harperAuthHeader: falls back to Bearer when no user', () => {
+    assert.equal(harperAuthHeader({ token: 'tok' }), 'Bearer tok');
+    assert.equal(harperAuthHeader({}), 'Bearer ');
+});
+
+test('readMarkdown: uses provided authHeader (Basic) verbatim', async () => {
+    const cap = {};
+    const rec = JSON.stringify({ markdown: '# Hi' });
+    await readMarkdown('markdown_cache', 'https://example.org',
+        { baseUrl: '/_harper', authHeader: 'Basic YWRtaW46cHc=', timeoutMs: 1500 }, mockHttp(200, rec, cap));
+    assert.deepEqual(cap.options.headers['Authorization'], ['Basic YWRtaW46cHc=']);
 });
 
 test('markdown_cache: parses JSON record and builds the key URL', async () => {
