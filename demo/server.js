@@ -977,11 +977,11 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
     return;
   }
 
-  // Scenario C only, remaining Harper scenarios (prerender): drop Cache Status /
-  // Edge Processing / Served by (race-prone over a 2s gap) and explain it instead.
-  // Scenario B and the CDN scenario keep the real rows.
+  // Scenario C, prerender on a MISS: show the talk-track note instead of cache-state
+  // rows. When prerender actually hits Harper (harper-cache-*), fall through to the
+  // real rows below. Scenario B, the CDN scenario, and any real hit keep the rows.
   var cacheBlock;
-  if (harperScenario && scenario === 'c') {
+  if (harperScenario && scenario === 'c' && !harperHit) {
     cacheBlock =
       '<div style="font-size:12px;color:#475569;line-height:1.55;background:#f1f5f9;' +
       'border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin:6px 0">' +

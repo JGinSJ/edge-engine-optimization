@@ -18,13 +18,14 @@ Other vars: `PMUSER_HARPER_URL` (read base, e.g. `/_harper`), `PMUSER_HARPER_WRI
 `PMUSER_WASM_URL` (Akamai-fronted `.fwf.app`),
 `PMUSER_CRAWLER_POLICY` / `PMUSER_SERVE_HTML` (prerender, next increment).
 
-**Harper auth (`markdown_cache` read + write-through):** the Harper Fabric data API
-authenticates with **HTTP Basic** — a Bearer token is rejected with `401 "Must login"`.
-Set `PMUSER_HARPER_USER` and `PMUSER_HARPER_PASS`; the EdgeWorker sends `Authorization:
-Basic` on reads and forwards the same credential to the converter (`X-Harper-Authorization`)
-for the write. `PMUSER_HARPER_TOKEN` is the legacy Bearer fallback (used only when no
-user is set) — and won't authenticate against Harper Fabric. (The prerender `/page`
-endpoints use `PMUSER_HARPER_BOT_KEY` / `x-pr-req-key`, separate from this.)
+**Harper auth (all reads + write-through):** the Harper Fabric data API authenticates
+with **HTTP Basic** — a Bearer token is rejected with `401 "Must login"`. Set
+`PMUSER_HARPER_USER` and `PMUSER_HARPER_PASS`; the EdgeWorker sends `Authorization:
+Basic` on **every** Harper read (`markdown_cache` and `page_content`/`page`) and forwards
+the same credential to the converter (`X-Harper-Authorization`) for the write.
+`PMUSER_HARPER_TOKEN` is the legacy Bearer fallback (used only when no user is set) —
+and won't authenticate against Harper Fabric. The prerender bot-key (`PMUSER_HARPER_BOT_KEY`
+/ `x-pr-req-key`) is still sent alongside Basic for the prerender component's own gate.
 
 ## Representation routing
 

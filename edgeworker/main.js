@@ -118,7 +118,9 @@ async function serveMarkdown(targetUrl, cfg, botKind) {
               timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
     } else { // page_content (Harper self-populating backends)
         read = await fetchFromHarper(targetUrl,
-            { baseUrl: cfg.HARPER_URL, token: cfg.HARPER_TOKEN, botKey: cfg.HARPER_BOT_KEY || undefined, timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
+            { baseUrl: cfg.HARPER_URL,
+              authHeader: harperAuthHeader({ user: cfg.HARPER_USER, pass: cfg.HARPER_PASS, token: cfg.HARPER_TOKEN }),
+              botKey: cfg.HARPER_BOT_KEY || undefined, timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
     }
 
     if (read.ok) {
@@ -145,7 +147,7 @@ async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
 
     if (!wasm.ok) {
         const err = await wasm.text();
-        const h = { 'X-Wasm-Execution': ['failed'], 'Cache-Control': ['no-store'], 'X-EW-Version': ['2.3.0'] };
+        const h = { 'X-Wasm-Execution': ['failed'], 'Cache-Control': ['no-store'], 'X-EW-Version': ['2.4.0'] };
         if (readReason) h['X-Harper-Read-Reason'] = [readReason];
         return createResponse(500, h, `Wasm Error: ${err}`);
     }
@@ -158,7 +160,7 @@ async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
         'X-Served-By':      [harperBackend ? 'fermyon-fallback' : 'fermyon-origin'],
         'X-Cache-Write':    [cfg.WRITE_THROUGH ? ((wasm.getHeader('X-Harper-Write') ?? ['unknown'])[0] ?? 'unknown') : 'skip'],
         'X-Bot-Kind':       [botKind || 'none'],
-        'X-EW-Version':     ['2.3.0'],
+        'X-EW-Version':     ['2.4.0'],
     };
     if (readReason) out['X-Harper-Read-Reason'] = [readReason];
     return createResponse(200, out, wasm.body);
@@ -168,14 +170,16 @@ async function fermyonMarkdown(targetUrl, cfg, botKind, readReason) {
 async function serveHtml(targetUrl, cfg, botKind) {
     if (cfg.HARPER_ENABLED && cfg.HARPER_URL) {
         const result = await fetchHtmlFromHarper(targetUrl,
-            { baseUrl: cfg.HARPER_URL, token: cfg.HARPER_TOKEN, botKey: cfg.HARPER_BOT_KEY || undefined, timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
+            { baseUrl: cfg.HARPER_URL,
+              authHeader: harperAuthHeader({ user: cfg.HARPER_USER, pass: cfg.HARPER_PASS, token: cfg.HARPER_TOKEN }),
+              botKey: cfg.HARPER_BOT_KEY || undefined, timeoutMs: cfg.HARPER_TIMEOUT_MS }, httpRequest);
         if (result.ok) {
             return createResponse(200, {
                 'Content-Type':  ['text/html; charset=utf-8'],
                 'Cache-Control': ['max-age=3600, public'],
                 'X-Served-By':   ['harper-cache-html'],
                 'X-Bot-Kind':    [botKind || 'none'],
-                'X-EW-Version':  ['2.3.0'],
+                'X-EW-Version':  ['2.4.0'],
             }, result.response.body);
         }
         return await originHtml(targetUrl, botKind, result.reason);
@@ -185,7 +189,7 @@ async function serveHtml(targetUrl, cfg, botKind) {
 
 async function originHtml(targetUrl, botKind, fallbackReason) {
     const origin = await httpRequest(targetUrl, { method: 'GET' });
-    const headers = { 'X-Served-By': ['origin-fallback'], 'X-Bot-Kind': [botKind || 'none'], 'X-EW-Version': ['2.3.0'] };
+    const headers = { 'X-Served-By': ['origin-fallback'], 'X-Bot-Kind': [botKind || 'none'], 'X-EW-Version': ['2.4.0'] };
     for (const name of ORIGIN_PASSTHROUGH_HEADERS) {
         const v = origin.getHeader(name);
         if (v && v.length) headers[name] = v;
