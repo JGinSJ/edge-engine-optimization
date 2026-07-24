@@ -4,6 +4,10 @@
 # Node
 node_modules/
 
+# Python
+__pycache__/
+*.pyc
+
 # Rust / Spin build output
 target/
 .spin/
@@ -16,3 +20,8 @@ bundle.tgz
 .env
 .env.local
 **/.claude/settings.local.json
+
+# Apple refurb stock checker — local config (holds credentials) and runtime state
+apple-refurb-stock-checker/config.json
+apple-refurb-stock-checker/state.json
+apple-refurb-stock-checker/*.log
